@@ -17,8 +17,8 @@ rd <- function(
     ~bw_method_uniform,  ~bw_method, ~bw_method_paper,
                   TRUE,       'MSE',            'MSE', 
                   TRUE,      'FLCI',           'FLCI',
-                 FALSE,     'mserd',          'mserd',
-                 FALSE,     'cerrd',          'cerrd'
+                 FALSE,       'MSE',          'mserd',
+                 FALSE,        'CE',          'cerrd'
   )
   
   bw_method_mapped <- map_bw_names %>% 

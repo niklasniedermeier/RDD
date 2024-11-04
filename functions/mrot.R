@@ -37,7 +37,7 @@ m_rot_poly <- function(X, Y, c, p) {
 
 m_rot_poly_update <- function(Y, X, c, rd_params, first_p, second_p) {
   
-  if (first_p == 1) {
+  if (first_p == 1 | second_p == 1) {
     return(0)
   }
   
