@@ -1,6 +1,5 @@
 coverage_prob_step <- function(
   data_model,
-  data_model_m,
   n,
   kernel,
   mrot,
@@ -13,10 +12,11 @@ coverage_prob_step <- function(
   
   #-----------------------------------------------------------------------------
   # Select data generating process
-  data <- dgp(data_model = data_model, n = n, M = data_model_m)
+  data <- dgp(data_model = data_model, n = n)
   
   X <- data$X
   Y <- data$Y
+  M <- data$M
   cutoff <- data$cutoff
   tau <- data$tau
   
@@ -24,43 +24,26 @@ coverage_prob_step <- function(
   # Get Hölder constant estimate
   if (bw_method_uniform){
     
-    if (mrot == "Armstrong_and_Kolesar"){
-      m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 4) 
-    }
-    
-    if (mrot == "Imbens_and_Wager"){
-      m_hat <- 2 * m_rot_poly(X = X, Y = Y, c = cutoff, p = 2) 
-    }
-    
     if (mrot == "poly_2"){
+      
       m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 2) 
     }
     
     if (mrot == "poly_3"){
+      
       m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 3) 
     }
     
     if (mrot == "poly_4"){
+      
       m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 4) 
     }
     
-    if (mrot == "poly_update_4"){
-      rd_params <- data.frame(
-        kernel            = kernel,
-        ci_method         = ci_method,
-        bw_method         = bw_method,
-        bw_method_uniform = bw_method_uniform,
-        se_method         = se_method,
-        alpha             = alpha
-      )
-      
-      m_hat <- m_rot_poly_update(
-        X = X, Y = Y, c = cutoff, 
-        rd_params = rd_params, 
-        first_p = 4, second_p = 4) 
+    if (mrot == "Imbens"){
+      m_hat <- 2 * m_rot_poly(X = X, Y = Y, c = cutoff, p = 2) 
     }
     
-    if (mrot == "poly_update_3"){
+    if (mrot == "poly_2_update"){
       rd_params <- data.frame(
         kernel            = kernel,
         ci_method         = ci_method,
@@ -73,10 +56,11 @@ coverage_prob_step <- function(
       m_hat <- m_rot_poly_update(
         X = X, Y = Y, c = cutoff, 
         rd_params = rd_params, 
-        first_p = 3, second_p = 3) 
+        first_p = 2, second_p = 2
+      ) 
     }
     
-    if (mrot == "poly_update_2"){
+    if (mrot == "poly_3_update"){
       rd_params <- data.frame(
         kernel            = kernel,
         ci_method         = ci_method,
@@ -89,7 +73,46 @@ coverage_prob_step <- function(
       m_hat <- m_rot_poly_update(
         X = X, Y = Y, c = cutoff, 
         rd_params = rd_params, 
-        first_p = 2, second_p = 2) 
+        first_p = 3, second_p = 3
+      ) 
+    }
+    
+    if (mrot == "poly_4_update"){
+      rd_params <- data.frame(
+        kernel            = kernel,
+        ci_method         = ci_method,
+        bw_method         = bw_method,
+        bw_method_uniform = bw_method_uniform,
+        se_method         = se_method,
+        alpha             = alpha
+      )
+      
+      m_hat <- m_rot_poly_update(
+        X = X, Y = Y, c = cutoff, 
+        rd_params = rd_params, 
+        first_p = 4, second_p = 4
+      ) 
+    }
+    
+    if (mrot == "spline"){
+      
+      m_hat <- m_rot_spline(
+        X = X, Y = Y, c = cutoff
+      )
+    }
+    
+    if (mrot == "smooth_spline"){
+      
+      m_hat <- m_rot_smooth_spline(
+        X = X, Y = Y, c = cutoff
+      )  
+    }
+    
+    if (mrot == "smooth_spline_update"){
+      
+      m_hat <- m_rot_smooth_spline_update(
+        X = X, Y = Y, c = cutoff
+      )  
     }
     
   }else{
@@ -127,7 +150,8 @@ coverage_prob_step <- function(
     tau_hat           = rd_estimates$tau_hat,
     h_hat             = rd_estimates$h_hat,
     b_hat             = rd_estimates$b_hat,
-    m_hat             = m_hat
+    m_hat             = m_hat,
+    M                 = M
   )
   
   return(coverage_estimates)
@@ -136,7 +160,6 @@ coverage_prob_step <- function(
 coverage_prob <- function(
   S,
   data_model,
-  data_model_m,
   n,
   mrot,
   kernel,
@@ -151,7 +174,6 @@ coverage_prob <- function(
     function(s){
       coverage_estimates <- coverage_prob_step(
         data_model        = data_model,
-        data_model_m      = data_model_m,
         n                 = n,
         kernel            = kernel,
         mrot              = mrot,
@@ -178,7 +200,8 @@ coverage_prob <- function(
       tau_hat           = mean(simulations$tau_hat),
       h_hat             = mean(simulations$h_hat),
       b_hat             = mean(simulations$b_hat),
-      m_hat             = mean(simulations$m_hat)
+      m_hat             = mean(simulations$m_hat),
+      M                 = simulations$M[1]
     )
   
   return(params_and_estimates)
