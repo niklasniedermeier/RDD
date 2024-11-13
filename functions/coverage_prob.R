@@ -2,7 +2,7 @@ coverage_prob_step <- function(
   data_model,
   n,
   kernel,
-  mrot,
+  mrot_method,
   ci_method,
   bw_method,
   bw_method_uniform,
@@ -24,95 +24,50 @@ coverage_prob_step <- function(
   # Get Hölder constant estimate
   if (bw_method_uniform){
     
-    if (mrot == "poly_2"){
+    if (mrot_method == "poly_2"){
       
-      m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 2) 
+      m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
     }
     
-    if (mrot == "poly_3"){
+    if (mrot_method == "poly_3"){
       
-      m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 3) 
+      m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 3)
     }
     
-    if (mrot == "poly_4"){
-      
-      m_hat <- m_rot_poly(X = X, Y = Y, c = cutoff, p = 4) 
+    if (mrot_method == "poly_4"){
+      m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 4)
     }
     
-    if (mrot == "Imbens"){
-      m_hat <- 2 * m_rot_poly(X = X, Y = Y, c = cutoff, p = 2) 
+    if (mrot_method == "Imbens"){
+      m_hat <- mrot(X = X, Y = Y, method = "Imbens", c = cutoff, p = 2)
     }
     
-    if (mrot == "poly_2_update"){
-      rd_params <- data.frame(
-        kernel            = kernel,
-        ci_method         = ci_method,
-        bw_method         = bw_method,
-        bw_method_uniform = bw_method_uniform,
-        se_method         = se_method,
-        alpha             = alpha
-      )
-      
-      m_hat <- m_rot_poly_update(
-        X = X, Y = Y, c = cutoff, 
-        rd_params = rd_params, 
-        first_p = 2, second_p = 2
-      ) 
+    if (mrot_method == "poly_2_update"){
+      m_hat <- mrot_update(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
     }
     
-    if (mrot == "poly_3_update"){
-      rd_params <- data.frame(
-        kernel            = kernel,
-        ci_method         = ci_method,
-        bw_method         = bw_method,
-        bw_method_uniform = bw_method_uniform,
-        se_method         = se_method,
-        alpha             = alpha
-      )
-      
-      m_hat <- m_rot_poly_update(
-        X = X, Y = Y, c = cutoff, 
-        rd_params = rd_params, 
-        first_p = 3, second_p = 3
-      ) 
+    if (mrot_method == "poly_3_update"){
+      m_hat <- mrot_update(X = X, Y = Y, method = "poly", c = cutoff, p = 3)
     }
     
-    if (mrot == "poly_4_update"){
-      rd_params <- data.frame(
-        kernel            = kernel,
-        ci_method         = ci_method,
-        bw_method         = bw_method,
-        bw_method_uniform = bw_method_uniform,
-        se_method         = se_method,
-        alpha             = alpha
-      )
-      
-      m_hat <- m_rot_poly_update(
-        X = X, Y = Y, c = cutoff, 
-        rd_params = rd_params, 
-        first_p = 4, second_p = 4
-      ) 
+    if (mrot_method == "poly_4_update"){
+      m_hat <- mrot_update(X = X, Y = Y, method = "poly", c = cutoff, p = 4)
     }
     
-    if (mrot == "spline"){
-      
-      m_hat <- m_rot_spline(
-        X = X, Y = Y, c = cutoff
-      )
+    if (mrot_method == "spline"){
+      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
     }
     
-    if (mrot == "smooth_spline"){
-      
-      m_hat <- m_rot_smooth_spline(
-        X = X, Y = Y, c = cutoff
-      )  
+    if (mrot_method == "spline_update"){
+      m_hat <- mrot_update(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
     }
     
-    if (mrot == "smooth_spline_update"){
-      
-      m_hat <- m_rot_smooth_spline_update(
-        X = X, Y = Y, c = cutoff
-      )  
+    if (mrot_method == "smooth_spline"){
+      m_hat <- mrot(X = X, Y = Y, method = "smooth_spline", c = cutoff)
+    }
+    
+    if (mrot_method == "smooth_spline_update"){
+      m_hat <- mrot_update(X = X, Y = Y, method = "spline", c = cutoff)
     }
     
   }else{
@@ -161,7 +116,7 @@ coverage_prob <- function(
   S,
   data_model,
   n,
-  mrot,
+  mrot_method,
   kernel,
   ci_method,
   bw_method,
@@ -172,11 +127,12 @@ coverage_prob <- function(
   
   simulations <- lapply((1:S), 
     function(s){
+      
       coverage_estimates <- coverage_prob_step(
         data_model        = data_model,
         n                 = n,
         kernel            = kernel,
-        mrot              = mrot,
+        mrot              = mrot_method,
         ci_method         = ci_method,
         bw_method         = bw_method,
         bw_method_uniform = bw_method_uniform,
