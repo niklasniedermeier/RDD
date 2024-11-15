@@ -24,24 +24,21 @@ data_model <- c(
   "design_1",
   "design_2",
   "design_3",
-  "design_4"
+  "design_4",
+  "design_5"
 )
 
 mrot_method <- c(
-  #"Imbens_update",
-  #"smooth_spline_update_BIC",
-  #"smooth_spline_BIC",
-  #"smooth_spline_update",
-  #"spline",
-  "combo_imbens_spline",
-  "spline_update",
+  "Imbens",
+  #"combo_imbens_spline",
   #"poly_2",
   #"poly_3", 
   #"poly_4",
-  "Imbens"
   #"poly_2_update",
   #"poly_3_update",
-  #"poly_4_update"
+  "poly_4_update",
+  #"spline",
+  "spline_update"
 )
 
 kernel <- c("triangular")
@@ -107,7 +104,12 @@ for (i in c(1:grid_length)){
 }
 
 analysis <- coverage_prob_grid %>% dplyr::mutate(
-  m_hat_norm = m_hat - m)
+  m_hat_norm = 
+    case_when(
+      mrot_method == "Imbens" ~ 2*(m_hat/2) - m,
+      .default = m_hat - m
+    )
+)
 
 plotly::plot_ly(
   analysis,
@@ -139,6 +141,23 @@ plotly::plot_ly(
     yaxis = list(
       title = "SD(m_hat)",
       tickvals = seq(0, 4, by = 1)  
+    ),
+    xaxis = list(
+      title = "DGP"
+    )
+  )
+
+plotly::plot_ly(
+  analysis,
+  x = ~data_model, 
+  y = ~coverage_prob, 
+  color = ~mrot_method, 
+  type = 'scatter'
+  , mode = 'lines+markers'
+) %>% 
+  layout(
+    yaxis = list(
+      title = "Interval length"
     ),
     xaxis = list(
       title = "DGP"
