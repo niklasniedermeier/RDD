@@ -58,7 +58,7 @@ mrot <- function(X, Y, method, c = NULL, p = 3, nknots = 3, show_plot = FALSE) {
        
        model <- npreg::ss(
          x = df$X , y = df$Y,
-         method = "OCV",
+         method = "BIC",
          nknots = nknots
        )
        
@@ -115,7 +115,7 @@ mrot <- function(X, Y, method, c = NULL, p = 3, nknots = 3, show_plot = FALSE) {
   #  title(main = paste("M = ",round(f2_max,2)))
   #}
   
-  f2_max <- max(f2_maxima)
+  f2_max <- round(max(f2_maxima),4)
   
   return(f2_max)
 }
@@ -126,7 +126,11 @@ f2_poly <- function(x, coef, p) {
 
 
 
-mrot_update <- function(Y, X, method, c, p = 3, nknots = 3, rd_params = NULL, runs = 1, show_plot = FALSE) {
+mrot_update <- function(Y, X, method, c, p = 3, nknots = 3, rd_params = NULL, method_update = NULL, runs = 1, show_plot = FALSE) {
+  
+  if (is.null(method_update)){
+    method_update = method
+  }
   
   if (is.null(rd_params)){
     rd_params <- data.frame(
@@ -165,7 +169,7 @@ mrot_update <- function(Y, X, method, c, p = 3, nknots = 3, rd_params = NULL, ru
     # Adjust Y's below the cutoff using our estimate for tau
     Y[X>c] <- Y[X>c] - tau_hat
     c <- NULL
-    m_hat <-   m_hat <- mrot(X, Y, method, c, p, nknots, show_plot)
+    m_hat <- mrot(X, Y, method_update, c, p, nknots, show_plot)
   }
   
   return(m_hat)

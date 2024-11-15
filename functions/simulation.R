@@ -1,4 +1,4 @@
-coverage_prob_step <- function(
+simulation_step <- function(
   data_model,
   n,
   kernel,
@@ -19,7 +19,7 @@ coverage_prob_step <- function(
   M <- data$M
   cutoff <- data$cutoff
   tau <- data$tau
-  
+ 
   #-----------------------------------------------------------------------------
   # Get Hölder constant estimate
   if (bw_method_uniform){
@@ -63,12 +63,18 @@ coverage_prob_step <- function(
     }
     
     if (mrot_method == "smooth_spline"){
-      m_hat <- mrot(X = X, Y = Y, method = "smooth_spline", c = cutoff)
+      m_hat <- 1.5 * mrot(X = X, Y = Y, method = "smooth_spline", c = cutoff)
     }
     
     if (mrot_method == "smooth_spline_update"){
       m_hat <- mrot_update(X = X, Y = Y, method = "spline", c = cutoff)
     }
+    
+    if (mrot_method == "combo_imbens_spline"){
+      m_hat <- mrot_update(X = X, Y = Y, method = "Imbens", method_update = "spline", c = cutoff)
+    }
+    
+    
     
   }else{
     #Use dummy m_hat for rd()
@@ -112,7 +118,7 @@ coverage_prob_step <- function(
   return(coverage_estimates)
 }
 
-coverage_prob <- function(
+simulation <- function(
   S,
   data_model,
   n,
@@ -128,11 +134,11 @@ coverage_prob <- function(
   simulations <- lapply((1:S), 
     function(s){
       
-      coverage_estimates <- coverage_prob_step(
+      coverage_estimates <- simulation_step(
         data_model        = data_model,
         n                 = n,
         kernel            = kernel,
-        mrot              = mrot_method,
+        mrot_method       = mrot_method,
         ci_method         = ci_method,
         bw_method         = bw_method,
         bw_method_uniform = bw_method_uniform,
@@ -157,6 +163,7 @@ coverage_prob <- function(
       h_hat             = mean(simulations$h_hat),
       b_hat             = mean(simulations$b_hat),
       m_hat             = mean(simulations$m_hat),
+      m_sd              = sd(simulations$m_hat),
       M                 = simulations$M[1]
     )
   

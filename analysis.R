@@ -2,7 +2,7 @@
 source(file.path(getwd(), "lib.R"))
 
 # import sources
-source(file.path(getwd(), "functions", "coverage_prob.R"))
+source(file.path(getwd(), "functions", "simulation.R"))
 source(file.path(getwd(), "functions", "dgp.R"))
 source(file.path(getwd(), "functions", "mrot.R"))
 source(file.path(getwd(), "functions","rd.R"))
@@ -12,12 +12,12 @@ set.seed(4322)
 
 #-------------------         fix parameters          ---------------------------
 
-S <- 500
+S <- 1000
 alpha <- 0.05
 
 #-----        Analysis of coverage probability and interval length          ----
 
-n <- 100
+n <- c(500)
 
 # Basis for construction of combinations
 data_model <- c(
@@ -28,17 +28,20 @@ data_model <- c(
 )
 
 mrot_method <- c(
-  "smooth_spline",
-  "smooth_spline_update",
-  "spline",
+  #"Imbens_update",
+  #"smooth_spline_update_BIC",
+  #"smooth_spline_BIC",
+  #"smooth_spline_update",
+  #"spline",
+  "combo_imbens_spline",
   "spline_update",
-  "poly_2",
-  "poly_3", 
-  "poly_4",
-  "Imbens",
-  "poly_2_update",
-  "poly_3_update",
-  "poly_4_update"
+  #"poly_2",
+  #"poly_3", 
+  #"poly_4",
+  "Imbens"
+  #"poly_2_update",
+  #"poly_3_update",
+  #"poly_4_update"
 )
 
 kernel <- c("triangular")
@@ -76,7 +79,7 @@ for (i in c(1:grid_length)){
   
   param <- coverage_prob_grid[i,]
   
-  estimates <- coverage_prob( 
+  estimates <- simulation( 
     S                 = S,
     data_model        = as.character(param$data_model),
     n                 = as.integer(param$n),
@@ -96,41 +99,48 @@ for (i in c(1:grid_length)){
   coverage_prob_grid[i,"b_hat"]           <- estimates$b_hat 
   coverage_prob_grid[i,"m_hat"]           <- estimates$m_hat 
   coverage_prob_grid[i,"m"]               <- estimates$M
+  coverage_prob_grid[i,"m_sd"]            <- estimates$m_sd
   
   print(paste0(i," / ", grid_length))
   print(coverage_prob_grid[i,])
   
 }
 
-
-coverage_prob_grid <- coverage_prob_grid %>% dplyr::mutate(
-  m_hat_norm = m_hat - m 
-)
+analysis <- coverage_prob_grid %>% dplyr::mutate(
+  m_hat_norm = m_hat - m)
 
 plotly::plot_ly(
-  coverage_prob_grid,
-  x = ~m_hat_norm, 
-  y = ~data_model, 
+  analysis,
+  x = ~data_model, 
+  y = ~m_hat_norm, 
   color = ~mrot_method, 
   type = 'scatter'
-  , mode = 'markers'
+  , mode = 'lines+markers'
 ) %>% 
   layout(
-    xaxis = list(
-      title = "m_hat - m",
-      tickvals = seq( round(min(coverage_prob_grid$m_hat_norm))-1  , max(coverage_prob_grid$m_hat_norm) + 1, by = 1)  
-    ),
-    shapes = list(
-      list(
-        type = "line",
-        x0 = 0, x1 = 0,  # x-position for the vertical line
-        y0 = 0, y1 = 4,  # y-range for the line
-        line = list(color = "grey", dash = "dot", width = 1)  # Line style: color, dash, width
-      )
-    ),
     yaxis = list(
+      title = "m_hat - m",
+      tickvals = seq(-4, 4, by = 1)  
+    ),
+    xaxis = list(
       title = "DGP"
     )
   )
   
-
+plotly::plot_ly(
+  analysis,
+  x = ~data_model, 
+  y = ~m_sd, 
+  color = ~mrot_method, 
+  type = 'scatter'
+  , mode = 'lines+markers'
+) %>% 
+  layout(
+    yaxis = list(
+      title = "SD(m_hat)",
+      tickvals = seq(0, 4, by = 1)  
+    ),
+    xaxis = list(
+      title = "DGP"
+    )
+  )

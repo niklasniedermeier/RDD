@@ -52,6 +52,7 @@ f_design_1 <- function(X, M){
 } 
 
 f_design_2 <- function(X, M){
+  # from Armstrong et al. 
   f <- sapply(X, function(x){
     0.5* M * 
       (
@@ -66,6 +67,7 @@ f_design_2 <- function(X, M){
 } 
 
 f_design_3 <- function(X, M){
+  
   f <- sapply(X, function(x){
     0.5 * M  * 
       (
