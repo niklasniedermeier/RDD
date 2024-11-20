@@ -29,16 +29,8 @@ data_model <- c(
 )
 
 mrot_method <- c(
-  "Imbens",
-  #"combo_imbens_spline",
-  #"poly_2",
-  #"poly_3", 
-  #"poly_4",
-  #"poly_2_update",
-  #"poly_3_update",
-  "poly_4_update",
-  #"spline",
-  "spline_update"
+  "true_m",
+  "Imbens"
 )
 
 kernel <- c("triangular")
@@ -47,9 +39,8 @@ kernel <- c("triangular")
 uniform_params <- tibble::tribble(
   ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
    "honest",      "MSE",               TRUE,      "nn",
-   #"honest",     "FLCI",               TRUE,      "nn",
-   #   "rbc",      "MSE",               TRUE,      "nn"
-  
+   "honest",     "FLCI",               TRUE,      "nn",
+      "rbc",      "MSE",               TRUE,      "nn"
 ) 
 
 uniform_grid <- expand.grid(
@@ -60,17 +51,30 @@ uniform_grid <- expand.grid(
 )
   
 
-coverage_prob_grid <- cbind(uniform_params, uniform_grid)
+uniform_params_expanded <- dplyr::cross_join(uniform_params, uniform_grid)
 
+# Methods with no uniform bandwidth
+not_uniform_params <- tibble::tribble(
+  ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
+      "rbc",      "MSE",               FALSE,      "nn",
+      "rbc",       "CE",               FALSE,      "nn",
+)
 
-#rbc_params <- tibble::tribble(
-#  ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
-#      "rbc",      "MSE",               FALSE,      "nn",
-#      "rbc",       "CE",               FALSE,      "nn",
-#)
+not_uniform_grid <- expand.grid(
+  n = n,
+  data_model = data_model,
+  mrot_method = NA,
+  kernel = kernel
+)
+
+not_uniform_params_expanded <- dplyr::cross_join(not_uniform_params, not_uniform_grid)
+
+# Combine Grids
+
+coverage_prob_grid <- rbind(not_uniform_params_expanded, uniform_params_expanded)
 
 grid_length <- nrow(coverage_prob_grid)
-
+  
 # Estimate coverage probability for all combinations
 for (i in c(1:grid_length)){
   
@@ -103,6 +107,48 @@ for (i in c(1:grid_length)){
   
 }
 
+# Analysis of CI Methods
+
+ci_analysis <- coverage_prob_grid %>% dplyr::mutate(
+  bw_method_extended = paste0(bw_method, " (ci = ",ci_method,", uni = ",bw_method_uniform,", mrot = ",mrot_method,")") 
+)
+
+plotly::plot_ly(
+  ci_analysis,
+  x = ~data_model, 
+  y = ~interval_length, 
+  color = ~bw_method_extended, 
+  type = 'scatter'
+  , mode = 'lines+markers'
+) %>% 
+  layout(
+    yaxis = list(
+      title = "Interval length"  
+    ),
+    xaxis = list(
+      title = "DGP"
+    )
+  )
+
+plotly::plot_ly(
+  ci_analysis,
+  x = ~data_model, 
+  y = ~coverage_prob, 
+  color = ~bw_method_extended, 
+  type = 'scatter'
+  , mode = 'lines+markers'
+) %>% 
+  layout(
+    yaxis = list(
+      title = "Coverage Probability",
+      tickvals = seq(0.9, 1, by = 0.02)  
+    ),
+    xaxis = list(
+      title = "DGP"
+    )
+  )
+
+# Analysis of M Methods
 analysis <- coverage_prob_grid %>% dplyr::mutate(
   m_hat_norm = 
     case_when(
