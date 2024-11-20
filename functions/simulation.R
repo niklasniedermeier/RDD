@@ -24,6 +24,11 @@ simulation_step <- function(
   # Get Hölder constant estimate
   if (bw_method_uniform){
     
+    if (mrot_method == "true_m"){
+      
+      m_hat <- M
+    }
+    
     if (mrot_method == "poly_2"){
       
       m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
@@ -41,40 +46,16 @@ simulation_step <- function(
     if (mrot_method == "Imbens"){
       m_hat <- mrot(X = X, Y = Y, method = "Imbens", c = cutoff, p = 2)
     }
-    
-    if (mrot_method == "poly_2_update"){
-      m_hat <- mrot_update(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
-    }
-    
-    if (mrot_method == "poly_3_update"){
-      m_hat <- mrot_update(X = X, Y = Y, method = "poly", c = cutoff, p = 3)
-    }
-    
-    if (mrot_method == "poly_4_update"){
-      m_hat <- mrot_update(X = X, Y = Y, method = "poly", c = cutoff, p = 4)
-    }
+
     
     if (mrot_method == "spline"){
       m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
     }
     
-    if (mrot_method == "spline_update"){
-      m_hat <- mrot_update(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
-    }
-    
+
     if (mrot_method == "smooth_spline"){
       m_hat <- 1.5 * mrot(X = X, Y = Y, method = "smooth_spline", c = cutoff)
     }
-    
-    if (mrot_method == "smooth_spline_update"){
-      m_hat <- mrot_update(X = X, Y = Y, method = "spline", c = cutoff)
-    }
-    
-    if (mrot_method == "combo_imbens_spline"){
-      m_hat <- mrot_update(X = X, Y = Y, method = "Imbens", method_update = "spline", c = cutoff)
-    }
-    
-    
     
   }else{
     #Use dummy m_hat for rd()
