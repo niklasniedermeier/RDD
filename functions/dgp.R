@@ -45,7 +45,7 @@ f_design_1 <- function(X, M){
         - 2 * max(abs(x) - 0.2, 0)^2 
         + 2 * max(abs(x) - 0.5, 0)^2 
         - 2 * max(abs(x) - 0.65, 0)^2 
-      )  
+      )  + 0.1
   }
   )
   return(f)
@@ -77,8 +77,8 @@ f_design_3 <- function(X, M){
         - 2 * max(x, 0)^2 
         + 2 * max(x - 0.4, 0)^2 
         - 2 * max(x - 0.6, 0)^2 
-        - 0.5
-      )  
+      ) - 0.5
+  
   }
   )
   return(f)
@@ -89,11 +89,10 @@ f_design_4 <- function(X, M){
   f <- sapply(X, function(x){
     0.5 * M * 
       (
-        (x+1)^2                 # x^2             ->     2x   ->   2   
-        - 2 * max(x, 0)^2       # x^2 -2x^2       ->    -2x   ->  -2 
-        - 4 * max(x - 0.6, 0)^2 # x^2 -2x^2 -4x^2 ->   -10x   -> -10
-        - 0.5
-      )  
+        (x+0.3)^2                 
+        - 2 * max(x, 0)^2   
+        + 2 * max(x-0.3,0)^2
+      )  -0.5
   }
   )
   return(f)
@@ -111,25 +110,27 @@ f_design_5 <- function(X, M){
 
 
 f_design_6 <- function(X, M){
-  
   f <- sapply(X, function(x){
-    0.5 * M  * 
+    0.5 * M * 
       (
-        x^2 
-        - 2 * max(abs(x) - 0.25, 0)^2
-      )
+        (x+1)^2                 # x^2             ->     2x   ->   2   
+        - 2 * max(x, 0)^2       # x^2 -2x^2       ->    -2x   ->  -2 
+        - 4 * max(x - 0.6, 0)^2 # x^2 -2x^2 -4x^2 ->   -10x   -> -10
+        - 0.5
+      )  
   }
   )
   return(f)
 } 
 
-show_dgp <- function(data_model){
+
+show_dgp <- function(){
   n <- 10000
   X <- runif(n, -1, 1)
 
   X <- sort(X)
   
-  M <- 4
+  M <- 2
 
   data <- data.frame(
     X = X,
@@ -157,9 +158,48 @@ show_dgp <- function(data_model){
         title = 'f(x)',
         tickvals = c(-2.0,-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5,2.0,2.5,3.0)
       ), 
-      legend = list(x = 0.07, y = 1.035)
+      legend = list(x = 0.08, y = 1.035)
   )
 }
 
+show_dgp_single_all_m <- function(design_num){
+  n <- 10000
+  X <- runif(n, -1, 1)
+  
+  X <- sort(X)
+  
+  f_design <- get(paste0("f_design_", design_num))
+  
+  data <- data.frame(
+    X = X,
+    M_2 = f_design(X, 2),
+    M_4 = f_design(X, 4),
+    M_6 = f_design(X, 6),
+    M_8 = f_design(X, 8)
+  )
+  
+  line = list(width = 1.5) 
+  
+  plotly::plot_ly(data, x = ~X) %>% 
+    add_trace(y = ~M_2, line = line, name = 'M: 2', type = 'scatter', mode = 'lines') %>% 
+    add_trace(y = ~M_4, line = line, name = 'M: 4', type = 'scatter', mode = 'lines') %>% 
+    add_trace(y = ~M_6, line = line, name = 'M: 6', type = 'scatter', mode = 'lines') %>% 
+    add_trace(y = ~M_8, line = line, name = 'M: 8', type = 'scatter', mode = 'lines') %>%
+    layout(
+      xaxis = list(
+        title = "x"
+      ), 
+      yaxis = list(
+        title = 'f(x)'
+      ), 
+      legend = list(x = 0.07, y = 1.035)
+    )
+}
+
+show_dgp_single_all_m(1) 
+show_dgp_single_all_m(2) 
+show_dgp_single_all_m(3) 
+show_dgp_single_all_m(4) 
+show_dgp_single_all_m(5) 
 
 show_dgp()
