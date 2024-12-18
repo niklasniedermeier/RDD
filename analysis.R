@@ -8,7 +8,7 @@ source(file.path(getwd(), "functions", "mrot.R"))
 source(file.path(getwd(), "functions","rd.R"))
 
 # set seed for reproducibility
-set.seed(4322)
+set.seed(5321)
 
 #-------------------         fix parameters          ---------------------------
 
@@ -28,11 +28,9 @@ data_model <- c(
   "design_5"
 )
 
-mrot_method <- c(
-  "true_m",
-  "Imbens"
-)
 
+mrot_method <- c("true_m")
+M <- c(2)
 kernel <- c("triangular")
 
 # Methods with uniform bandwidth
@@ -44,10 +42,11 @@ uniform_params <- tibble::tribble(
 ) 
 
 uniform_grid <- expand.grid(
-  n = n,
-  data_model = data_model,
+  n           = n,
+  data_model  = data_model,
   mrot_method = mrot_method,
-  kernel = kernel
+  M           = M,
+  kernel      = kernel
 )
   
 
@@ -55,16 +54,18 @@ uniform_params_expanded <- dplyr::cross_join(uniform_params, uniform_grid)
 
 # Methods with no uniform bandwidth
 not_uniform_params <- tibble::tribble(
-  ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
-      "rbc",      "MSE",               FALSE,      "nn",
-      "rbc",       "CE",               FALSE,      "nn",
+     ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
+          "rbc",      "MSE",               FALSE,      "nn",
+          "rbc",       "CE",               FALSE,      "nn",
+ "conventional",      "MSE",               FALSE,      "nn"
 )
 
 not_uniform_grid <- expand.grid(
-  n = n,
-  data_model = data_model,
+  n           = n,
+  data_model  = data_model,
   mrot_method = NA,
-  kernel = kernel
+  M           = M,
+  kernel      = kernel
 )
 
 not_uniform_params_expanded <- dplyr::cross_join(not_uniform_params, not_uniform_grid)
@@ -85,6 +86,7 @@ for (i in c(1:grid_length)){
     data_model        = as.character(param$data_model),
     n                 = as.integer(param$n),
     mrot_method       = as.character(param$mrot_method),
+    M                 = as.integer(param$M),
     kernel            = as.character(param$kernel),
     ci_method         = as.character(param$ci_method),
     bw_method         = as.character(param$bw_method),
@@ -95,6 +97,7 @@ for (i in c(1:grid_length)){
   
   coverage_prob_grid[i,"coverage_prob"]   <- estimates$coverage_prob
   coverage_prob_grid[i,"interval_length"] <- estimates$interval_length
+  coverage_prob_grid[i,"tau_hat_se"]      <- estimates$tau_hat_se
   coverage_prob_grid[i,"tau_hat"]         <- estimates$tau_hat
   coverage_prob_grid[i,"h_hat"]           <- estimates$h_hat
   coverage_prob_grid[i,"b_hat"]           <- estimates$b_hat 
@@ -110,102 +113,149 @@ for (i in c(1:grid_length)){
 # Analysis of CI Methods
 
 ci_analysis <- coverage_prob_grid %>% dplyr::mutate(
+  data_model = gsub(".*_(\\d+)$", "\\1", data_model),
   bw_method_extended = paste0(bw_method, " (ci = ",ci_method,", uni = ",bw_method_uniform,", mrot = ",mrot_method,")") 
-)
+) %>% arrange(
+  .data$ci_method
+) #%>% dplyr::filter(
+  #.data$M == 8
+#)
 
-plotly::plot_ly(
+line = list(width = 1.2) # Set line width here
+marker = list(size = 4)
+# Interval length
+
+plot_il <- plotly::plot_ly(
   ci_analysis,
   x = ~data_model, 
   y = ~interval_length, 
   color = ~bw_method_extended, 
-  type = 'scatter'
-  , mode = 'lines+markers'
+  line = line,
+  marker = marker,
+  type = 'scatter', 
+  mode = 'lines+markers',
+  showlegend = F
 ) %>% 
   layout(
     yaxis = list(
-      title = "Interval length"  
+      title = "IL"  
     ),
     xaxis = list(
       title = "DGP"
     )
   )
 
-plotly::plot_ly(
+# Bias
+
+plot_bias <- plotly::plot_ly(
+  ci_analysis,
+  x = ~data_model, 
+  y = ~tau_hat-0.25, 
+  color = ~bw_method_extended, 
+  line = line,
+  marker = marker,
+  type = 'scatter'
+  , mode = 'lines+markers',
+  showlegend = F
+) %>% 
+  layout(
+    yaxis = list(
+      title = "Bias"  
+    ),
+    xaxis = list(
+      title = "DGP"
+    )
+  )
+
+# SE
+
+plot_se <- plotly::plot_ly(
+  ci_analysis,
+  x = ~data_model, 
+  y = ~tau_hat_se, 
+  color = ~bw_method_extended, 
+  line = line,
+  marker = marker,
+  type = 'scatter'
+  , mode = 'lines+markers',
+  showlegend = T
+  
+) %>% 
+  layout(
+    yaxis = list(
+      title = "SE"  
+    ),
+    xaxis = list(
+      title = "DGP"
+    )
+  )
+
+
+# CP
+
+y_axis_range <- c(0.75,1)
+y_axis_tickvals <- seq(0.75,1,0.05)
+
+plot_cp <- plotly::plot_ly(
   ci_analysis,
   x = ~data_model, 
   y = ~coverage_prob, 
   color = ~bw_method_extended, 
+  #linetype = ~bw_method_extended,
+  line = line,
+  marker = marker,
   type = 'scatter'
-  , mode = 'lines+markers'
+  , mode = 'lines+markers',
+  showlegend = F
 ) %>% 
   layout(
     yaxis = list(
-      title = "Coverage Probability",
-      tickvals = seq(0.9, 1, by = 0.02)  
+      title = "CP",
+      range = y_axis_range,
+      tickvals = y_axis_tickvals
     ),
     xaxis = list(
       title = "DGP"
     )
   )
 
-# Analysis of M Methods
-analysis <- coverage_prob_grid %>% dplyr::mutate(
-  m_hat_norm = 
-    case_when(
-      mrot_method == "Imbens" ~ 2*(m_hat/2) - m,
-      .default = m_hat - m
-    )
-)
-
-plotly::plot_ly(
-  analysis,
+plot_bw <- plotly::plot_ly(
+  ci_analysis,
   x = ~data_model, 
-  y = ~m_hat_norm, 
-  color = ~mrot_method, 
+  y = ~h_hat, 
+  color = ~bw_method_extended, 
+  line = line,
+  marker = marker,
   type = 'scatter'
-  , mode = 'lines+markers'
+  , mode = 'lines+markers',
+  showlegend = F
 ) %>% 
   layout(
     yaxis = list(
-      title = "m_hat - m",
-      tickvals = seq(-4, 4, by = 1)  
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-  
-plotly::plot_ly(
-  analysis,
-  x = ~data_model, 
-  y = ~m_sd, 
-  color = ~mrot_method, 
-  type = 'scatter'
-  , mode = 'lines+markers'
-) %>% 
-  layout(
-    yaxis = list(
-      title = "SD(m_hat)",
-      tickvals = seq(0, 4, by = 1)  
+      title = "Bandwidth"
     ),
     xaxis = list(
       title = "DGP"
     )
   )
 
-plotly::plot_ly(
-  analysis,
-  x = ~data_model, 
-  y = ~coverage_prob, 
-  color = ~mrot_method, 
-  type = 'scatter'
-  , mode = 'lines+markers'
+plot <- subplot(plot_cp,
+                plot_il,
+                plot_bias,
+                plot_se,
+                plot_bw,
+                nrows = 3,
+                margin = 0.09,
+                titleX = T,
+                titleY = T
 ) %>% 
-  layout(
-    yaxis = list(
-      title = "Interval length"
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
+  layout(title = paste0("M = ",unique(ci_analysis$M)),
+         legend = list(x = 0.5,y = 0,
+                       orientation = "v",
+                       tracegroupgap = 1,
+                       font = list(size = 10)
+         )
   )
+
+plot
+

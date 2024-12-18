@@ -3,6 +3,7 @@ simulation_step <- function(
   n,
   kernel,
   mrot_method,
+  M,
   ci_method,
   bw_method,
   bw_method_uniform,
@@ -12,11 +13,10 @@ simulation_step <- function(
   
   #-----------------------------------------------------------------------------
   # Select data generating process
-  data <- dgp(data_model = data_model, n = n)
+  data <- dgp(data_model = data_model, n = n, M = M)
   
   X <- data$X
   Y <- data$Y
-  M <- data$M
   cutoff <- data$cutoff
   tau <- data$tau
  
@@ -25,36 +25,51 @@ simulation_step <- function(
   if (bw_method_uniform){
     
     if (mrot_method == "true_m"){
-      
       m_hat <- M
     }
     
-    if (mrot_method == "poly_2"){
-      
+    if (mrot_method == "poly_p_2"){
       m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
     }
     
-    if (mrot_method == "poly_3"){
-      
+    if (mrot_method == "poly_p_3"){
       m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 3)
     }
     
-    if (mrot_method == "poly_4"){
+    if (mrot_method == "poly_p_4"){
       m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 4)
     }
     
-    if (mrot_method == "Imbens"){
-      m_hat <- mrot(X = X, Y = Y, method = "Imbens", c = cutoff, p = 2)
+    if (mrot_method == "poly_p_2_se"){
+      m_hat <- mrot(X = X, Y = Y, method = "poly_2_se", c = cutoff, p = 2)
     }
-
     
-    if (mrot_method == "spline"){
+    if (mrot_method == "Imbens_scale_2"){
+      m_hat <- 2 * mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
+    }
+    
+    if (mrot_method == "Imbens_scale_3"){
+      m_hat <- 3 * mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
+    }
+    
+    if (mrot_method == "Imbens_scale_4"){
+      m_hat <- 4 * mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
+    }
+    
+    if (mrot_method == "spline_p_2_k_2"){
+      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 2, nknots = 2)
+    }
+    
+    if (mrot_method == "spline_p_2_k_3"){
+      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 2, nknots = 3)
+    }
+    
+    if (mrot_method == "spline_p_3_k_2"){
+      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 2)
+    }
+    
+    if (mrot_method == "spline_p_3_k_3"){
       m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
-    }
-    
-
-    if (mrot_method == "smooth_spline"){
-      m_hat <- 1.5 * mrot(X = X, Y = Y, method = "smooth_spline", c = cutoff)
     }
     
   }else{
@@ -90,10 +105,10 @@ simulation_step <- function(
     conf.low          = conf.low,
     conf.high         = conf.high,
     tau_hat           = rd_estimates$tau_hat,
+    tau_hat_se        = rd_estimates$tau_hat_se,
     h_hat             = rd_estimates$h_hat,
     b_hat             = rd_estimates$b_hat,
-    m_hat             = m_hat,
-    M                 = M
+    m_hat             = m_hat
   )
   
   return(coverage_estimates)
@@ -104,6 +119,7 @@ simulation <- function(
   data_model,
   n,
   mrot_method,
+  M,
   kernel,
   ci_method,
   bw_method,
@@ -120,6 +136,7 @@ simulation <- function(
         n                 = n,
         kernel            = kernel,
         mrot_method       = mrot_method,
+        M                 = M,
         ci_method         = ci_method,
         bw_method         = bw_method,
         bw_method_uniform = bw_method_uniform,
@@ -140,12 +157,13 @@ simulation <- function(
     list(
       coverage_prob     = mean(simulations$check_coverage),
       interval_length   = interval_length,
+      tau_hat_se        = mean(simulations$tau_hat_se),
       tau_hat           = mean(simulations$tau_hat),
       h_hat             = mean(simulations$h_hat),
       b_hat             = mean(simulations$b_hat),
       m_hat             = mean(simulations$m_hat),
       m_sd              = sd(simulations$m_hat),
-      M                 = simulations$M[1]
+      M                 = M
     )
   
   return(params_and_estimates)
