@@ -21,6 +21,8 @@ rd <- function(
                  FALSE,        'CE',          'cerrd'
   )
   
+  scaleregul = 0
+  
   bw_method_mapped <- map_bw_names %>% 
     dplyr::filter(
       .data$bw_method_uniform == .env$bw_method_uniform & .data$bw_method == .env$bw_method
@@ -32,7 +34,7 @@ rd <- function(
   if (ci_method == "honest" & bw_method_uniform == TRUE){
     
     rd.honest.fit <- RDHonest::RDHonest(
-      formula       = "Y ~ X", 
+      formula       = "Y ~ X", #outcome ~ running_variable 
       data          = data.frame(X = X, Y = Y), 
       cutoff        = cutoff,
       M             = M,
@@ -51,6 +53,30 @@ rd <- function(
     b_hat     <- NA
   }
   
+  # Conventional
+  if (ci_method == "conventional" & bw_method_uniform == FALSE){
+    
+    rd.robust.fit <- rdrobust::rdrobust(
+      y        = Y, 
+      x        = X,
+      c        = cutoff,
+      p        = 1, #local linear regression,
+      kernel   = kernel,
+      vce      = se_method,
+      nnmatch  = 3,
+      level    = (1-alpha)*100,
+      bwselect = bw_method_mapped,
+      scaleregul = scaleregul
+    )
+    
+    tau_hat   <- rd.robust.fit$coef[1]
+    se_hat    <- rd.robust.fit$se[1]
+    conf.low  <- rd.robust.fit$ci[1,"CI Lower"]
+    conf.high <- rd.robust.fit$ci[1,"CI Upper"]
+    h_hat     <- rd.robust.fit$bws[1,1]
+    b_hat     <- NA
+  }
+  
   # Calonico, Cattaneo, Farrell and Titiunik
   if (ci_method == "rbc" & bw_method_uniform == FALSE){
     
@@ -62,12 +88,14 @@ rd <- function(
       q        = 2, #bias estimation using local quadratic regression
       kernel   = kernel,
       vce      = se_method,
+      nnmatch  = 3,
       level    = (1-alpha)*100,
-      bwselect = bw_method_mapped 
+      bwselect = bw_method_mapped,
+      scaleregul = scaleregul 
     )
     
-    tau_hat   <- rd.robust.fit$Estimate[1,"tau.bc"]
-    se_hat    <- rd.robust.fit$Estimate[1,"se.rb"]
+    tau_hat   <- rd.robust.fit$coef[3]
+    se_hat    <- rd.robust.fit$se[3]
     conf.low  <- rd.robust.fit$ci[3,"CI Lower"]
     conf.high <- rd.robust.fit$ci[3,"CI Upper"]
     h_hat     <- rd.robust.fit$bws[1,1]
@@ -101,13 +129,14 @@ rd <- function(
       q      = 2, #bias estimation using local quadratic regression
       kernel = kernel,
       vce    = se_method,
+      nnmatch= 3,
       level  = (1-alpha)*100,
       h      = h_hat,
       b      = h_hat
     )
     
-    tau_hat   <- rd.robust.fit$Estimate[1,"tau.bc"]
-    se_hat    <- rd.robust.fit$Estimate[1,"se.rb"]
+    tau_hat   <- rd.robust.fit$coef[3]
+    se_hat    <- rd.robust.fit$se[3]
     conf.low  <- rd.robust.fit$ci[3,"CI Lower"]
     conf.high <- rd.robust.fit$ci[3,"CI Upper"]
     h_hat     <- rd.robust.fit$bws[1,1]
@@ -126,13 +155,16 @@ rd <- function(
   )
   
   estimation_results <- data.frame(
-    tau_hat   = tau_hat,
-    se_hat    = se_hat,
-    conf.low  = conf.low, 
-    conf.high = conf.high,
-    h_hat     = h_hat,
-    b_hat     = b_hat  
+    tau_hat    = tau_hat,
+    tau_hat_se = se_hat,
+    conf.low   = conf.low, 
+    conf.high  = conf.high,
+    h_hat      = h_hat,
+    b_hat      = b_hat  
   )
+  
   return( cbind(function_arguments, estimation_results) )
 }
+
+
 
