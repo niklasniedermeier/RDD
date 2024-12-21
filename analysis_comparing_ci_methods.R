@@ -31,7 +31,7 @@ data_model <- c(
 
 
 mrot_method <- c("true_m")
-M <- c(4)
+M <- c(4,8)
 kernel <- c("triangular")
 
 # Methods with uniform bandwidth
@@ -111,5 +111,9 @@ for (i in c(1:grid_length)){
   
 }
 
-plot_compare_ci_methods(coverage_prob_grid, M = 4)
+ci_methods <- coverage_prob_grid
+
+plot_compare_ci_mse_methods(ci_methods)
+
+
 
