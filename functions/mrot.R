@@ -150,32 +150,27 @@ numerical_max_second_derivative <- function(X,Y) {
 }
 
 
-optimize_polynomial_degree <- function(x, y, max_degree = 10, n_folds = 5) {
+mrot_lower_bound <- function(X, Y, cutoff, alpha, s){
   
-  data <- data.frame(x = x, y = y)
+  rd.honest.fit <- suppressMessages(RDHonest::RDHonest(
+    formula       = "Y ~ X", #outcome ~ running_variable 
+    data          = data.frame(X = X, Y = Y), 
+    cutoff        = cutoff,
+    sclass        = "H", # Hölder class
+    kern          = "triangular",
+    opt.criterion = "MSE",
+    se.method     = "nn",
+    alpha         = alpha
+  ))
   
-  # Define cross-validation control
-  train_control <- trainControl(method = "cv", number = n_folds)
+  m_hat <- RDHonest::RDSmoothnessBound(
+    rd.honest.fit,
+    s = s,
+    separate = FALSE,
+    multiple = TRUE,
+    alpha = alpha,
+    sclass = "H"
+  )$estimate
   
-  cv_results <- data.frame(degree = integer(0), RMSE = numeric(0))
-  
-  for (k in 1:max_degree) {
-    # Define the formula for the polynomial regression model
-    formula <- as.formula(paste("y ~ poly(x, ", k, ", raw = TRUE)", sep = ""))
-    
-    # Fit the model with cross-validation
-    model <- train(formula, data = data, method = "lm", trControl = train_control)
-    
-    # Store the results
-    cv_results <- rbind(cv_results, data.frame(degree = k, RMSE = model$results$RMSE))
-  }
-  
-  # Select the degree with the lowest RMSE
-  optimal_degree <- cv_results$degree[which.min(cv_results$RMSE)]
-  
-  return(optimal_degree)
+  return(m_hat)
 }
-
-
-
-

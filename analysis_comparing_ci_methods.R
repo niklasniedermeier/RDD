@@ -6,6 +6,7 @@ source(file.path(getwd(), "functions", "simulation.R"))
 source(file.path(getwd(), "functions", "dgp.R"))
 source(file.path(getwd(), "functions", "mrot.R"))
 source(file.path(getwd(), "functions","rd.R"))
+source(file.path(getwd(), "functions","plots.R"))
 
 # set seed for reproducibility
 set.seed(5321)
@@ -30,7 +31,7 @@ data_model <- c(
 
 
 mrot_method <- c("true_m")
-M <- c(2)
+M <- c(4)
 kernel <- c("triangular")
 
 # Methods with uniform bandwidth
@@ -110,152 +111,5 @@ for (i in c(1:grid_length)){
   
 }
 
-# Analysis of CI Methods
-
-ci_analysis <- coverage_prob_grid %>% dplyr::mutate(
-  data_model = gsub(".*_(\\d+)$", "\\1", data_model),
-  bw_method_extended = paste0(bw_method, " (ci = ",ci_method,", uni = ",bw_method_uniform,", mrot = ",mrot_method,")") 
-) %>% arrange(
-  .data$ci_method
-) #%>% dplyr::filter(
-  #.data$M == 8
-#)
-
-line = list(width = 1.2) # Set line width here
-marker = list(size = 4)
-# Interval length
-
-plot_il <- plotly::plot_ly(
-  ci_analysis,
-  x = ~data_model, 
-  y = ~interval_length, 
-  color = ~bw_method_extended, 
-  line = line,
-  marker = marker,
-  type = 'scatter', 
-  mode = 'lines+markers',
-  showlegend = F
-) %>% 
-  layout(
-    yaxis = list(
-      title = "IL"  
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-# Bias
-
-plot_bias <- plotly::plot_ly(
-  ci_analysis,
-  x = ~data_model, 
-  y = ~tau_hat-0.25, 
-  color = ~bw_method_extended, 
-  line = line,
-  marker = marker,
-  type = 'scatter'
-  , mode = 'lines+markers',
-  showlegend = F
-) %>% 
-  layout(
-    yaxis = list(
-      title = "Bias"  
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-# SE
-
-plot_se <- plotly::plot_ly(
-  ci_analysis,
-  x = ~data_model, 
-  y = ~tau_hat_se, 
-  color = ~bw_method_extended, 
-  line = line,
-  marker = marker,
-  type = 'scatter'
-  , mode = 'lines+markers',
-  showlegend = T
-  
-) %>% 
-  layout(
-    yaxis = list(
-      title = "SE"  
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-
-# CP
-
-y_axis_range <- c(0.75,1)
-y_axis_tickvals <- seq(0.75,1,0.05)
-
-plot_cp <- plotly::plot_ly(
-  ci_analysis,
-  x = ~data_model, 
-  y = ~coverage_prob, 
-  color = ~bw_method_extended, 
-  #linetype = ~bw_method_extended,
-  line = line,
-  marker = marker,
-  type = 'scatter'
-  , mode = 'lines+markers',
-  showlegend = F
-) %>% 
-  layout(
-    yaxis = list(
-      title = "CP",
-      range = y_axis_range,
-      tickvals = y_axis_tickvals
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-plot_bw <- plotly::plot_ly(
-  ci_analysis,
-  x = ~data_model, 
-  y = ~h_hat, 
-  color = ~bw_method_extended, 
-  line = line,
-  marker = marker,
-  type = 'scatter'
-  , mode = 'lines+markers',
-  showlegend = F
-) %>% 
-  layout(
-    yaxis = list(
-      title = "Bandwidth"
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-plot <- subplot(plot_cp,
-                plot_il,
-                plot_bias,
-                plot_se,
-                plot_bw,
-                nrows = 3,
-                margin = 0.09,
-                titleX = T,
-                titleY = T
-) %>% 
-  layout(title = paste0("M = ",unique(ci_analysis$M)),
-         legend = list(x = 0.5,y = 0,
-                       orientation = "v",
-                       tracegroupgap = 1,
-                       font = list(size = 10)
-         )
-  )
-
-plot
+plot_compare_ci_methods(coverage_prob_grid, M = 4)
 

@@ -130,7 +130,7 @@ show_dgp <- function(){
 
   X <- sort(X)
   
-  M <- 2
+  M <- 4
 
   data <- data.frame(
     X = X,
@@ -141,7 +141,7 @@ show_dgp <- function(){
     design_5 = f_design_5(X, M)
   )
   
-  line = list(width = 1.5) 
+  line = list(width = 2) 
   
   plotly::plot_ly(data, x = ~X) %>% 
     add_trace(y = ~design_1, line = line, name = 'Design: 1', type = 'scatter', mode = 'lines') %>% 
@@ -158,7 +158,7 @@ show_dgp <- function(){
         title = 'f(x)',
         tickvals = c(-2.0,-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5,2.0,2.5,3.0)
       ), 
-      legend = list(x = 0.08, y = 1.035)
+      legend = list(x = 0.25, y = 0.05)
   )
 }
 
@@ -196,10 +196,10 @@ show_dgp_single_all_m <- function(design_num){
     )
 }
 
-show_dgp_single_all_m(1) 
-show_dgp_single_all_m(2) 
-show_dgp_single_all_m(3) 
-show_dgp_single_all_m(4) 
-show_dgp_single_all_m(5) 
+#show_dgp_single_all_m(1) 
+#show_dgp_single_all_m(2) 
+#show_dgp_single_all_m(3) 
+#show_dgp_single_all_m(4) 
+#show_dgp_single_all_m(5) 
 
 show_dgp()

@@ -28,6 +28,12 @@ simulation_step <- function(
       m_hat <- M
     }
     
+    if (mrot_method == "lower_bounds"){
+      # s denotes the number of neighboors
+      # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = n/10)
+    }
+    
     if (mrot_method == "poly_p_2"){
       m_hat <- mrot(X = X, Y = Y, method = "poly", c = cutoff, p = 2)
     }

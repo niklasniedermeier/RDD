@@ -30,19 +30,22 @@ data_model <- c(
 
 
 mrot_method <- c(
-  #"spline_p_2_k_2",
-  "spline_p_2_k_3",
-  #"spline_p_3_k_2",
-  #"spline_p_3_k_3",
-  "Imbens_scale_2",
-  #"Imbens_scale_3",
-  #"Imbens_scale_4",
-  "poly_p_2",
-  #"poly_p_3",
-  #"poly_p_4",
-  "poly_p_2_se"
+  #"lower_bounds",
+  "spline_p_2_k_2",
+  "spline_p_2_k_3",  # activate
+  "spline_p_3_k_2",
+  "spline_p_3_k_3",
+  "Imbens_scale_2",  # activate
+  "Imbens_scale_3", 
+  "Imbens_scale_4",
+  "poly_p_2",       # activate
+  "poly_p_3",
+  "poly_p_4",
+  "poly_p_2_se"      # activate
 )
-M <- c(8)
+
+M <- c(2,4,6,8)
+
 kernel <- c("triangular")
 
 # Methods with uniform bandwidth
@@ -99,78 +102,4 @@ for (i in c(1:grid_length)){
 
 # Analysis of CI Methods
 
-mrot_analysis <- coverage_prob_grid %>% 
-  dplyr::mutate(
-  data_model = gsub(".*_(\\d+)$", "\\1", data_model),
-  bw_method_extended = paste0("mrot = ",mrot_method) 
-) %>% arrange(
-  .data$ci_method
-) 
-
-line = list(width = 1.2) # Set line width here
-marker = list(size = 4)
-
-# Bias
-
-plot_bias <- plotly::plot_ly(
-  mrot_analysis,
-  x = ~data_model, 
-  y = ~m_hat-M, 
-  color = ~bw_method_extended, 
-  line = line,
-  marker = marker,
-  type = 'scatter'
-  , mode = 'lines+markers',
-  showlegend = T
-) %>% 
-  layout(
-    yaxis = list(
-      title = "Bias"  
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-# SE
-
-plot_sd <- plotly::plot_ly(
-  mrot_analysis,
-  x = ~data_model, 
-  y = ~m_sd, 
-  color = ~bw_method_extended, 
-  line = line,
-  marker = marker,
-  type = 'scatter'
-  , mode = 'lines+markers',
-  showlegend = F
-  
-) %>% 
-  layout(
-    yaxis = list(
-      title = "SD"  
-    ),
-    xaxis = list(
-      title = "DGP"
-    )
-  )
-
-
-plot <- subplot(
-  plot_bias,
-  plot_sd,
-  nrows = 2,
-  margin = 0.09,
-  titleX = T,
-  titleY = T
-) %>% 
-  layout(title = paste0("M = ",unique(mrot_analysis$M)),
-         legend = list(x = 0,y = 0,
-                       orientation = "h",
-                       tracegroupgap = 1,
-                       font = list(size = 10)
-         )
-  )
-
-plot
-
+plot_compare_mrot_methods(coverage_prob_grid)
