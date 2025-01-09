@@ -4,16 +4,18 @@ simulation_step <- function(
   kernel,
   mrot_method,
   M,
+  noise_method,
   ci_method,
   bw_method,
   bw_method_uniform,
   se_method,
+  se_method_J,
   alpha
 ){
   
   #-----------------------------------------------------------------------------
   # Select data generating process
-  data <- dgp(data_model = data_model, n = n, M = M)
+  data <- dgp(data_model = data_model, n = n, M = M, noise_method = noise_method)
   
   X <- data$X
   Y <- data$Y
@@ -26,6 +28,10 @@ simulation_step <- function(
     
     if (mrot_method == "true_m"){
       m_hat <- M
+    }
+    
+    if (grepl("^M_[0-9]+(\\.[0-9]+)?$", mrot_method)) {
+      m_hat <- as.numeric(sub("^M_([0-9]+(?:\\.[0-9]+)?)$", "\\1", mrot_method))
     }
     
     if (mrot_method == "lower_bounds"){
@@ -78,6 +84,11 @@ simulation_step <- function(
       m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
     }
     
+    if (mrot_method == "locpoly"){
+      h_pilot <- get_h_pilot(X = X, Y = Y, c = cutoff, alpha = alpha)
+      m_hat <- mrot(X = X, Y = Y, method = "locpoly", c = cutoff, h = h_pilot, p = 2)
+    }
+    
   }else{
     #Use dummy m_hat for rd()
     m_hat <- NA
@@ -96,6 +107,7 @@ simulation_step <- function(
       bw_method = bw_method,
       bw_method_uniform = bw_method_uniform,
       se_method = se_method,
+      se_method_J = se_method_J,
       alpha = alpha
     )
   )
@@ -126,11 +138,13 @@ simulation <- function(
   n,
   mrot_method,
   M,
+  noise_method,
   kernel,
   ci_method,
   bw_method,
   bw_method_uniform,
   se_method,
+  se_method_J,
   alpha
 ){
   
@@ -143,10 +157,12 @@ simulation <- function(
         kernel            = kernel,
         mrot_method       = mrot_method,
         M                 = M,
+        noise_method      = noise_method, 
         ci_method         = ci_method,
         bw_method         = bw_method,
         bw_method_uniform = bw_method_uniform,
         se_method         = se_method,
+        se_method_J       = se_method_J, 
         alpha             = alpha
       )
       return(coverage_estimates)
@@ -173,6 +189,23 @@ simulation <- function(
     )
   
   return(params_and_estimates)
+}
+
+get_h_pilot <- function(X, Y, c, alpha){
+  rd.honest.fit <- suppressMessages(RDHonest::RDHonest(
+    formula       = "Y ~ X", #outcome ~ running_variable 
+    data          = data.frame(X = X, Y = Y), 
+    cutoff        = c,
+    sclass        = "H", # Hölder class
+    kern          = "triangular",
+    opt.criterion = "MSE",
+    se.method     = "nn",
+    alpha         = alpha
+  ))
+  
+  h <- rd.honest.fit$coefficients$bandwidth
+  return(h) 
+  
 }
 
 

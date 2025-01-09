@@ -1,14 +1,69 @@
-dgp <- function(data_model, n, M){
+dgp <- function(data_model, n, M, noise_method){
   
-  # Running variable
   X <- runif(n, -1, 1)
   
-  # Jump & Cutoff
   tau = 0.25
   cutoff = 0
   
-  # Noise
-  noise <- rnorm(n, mean = 0, sd = sqrt(0.25))  
+  noise <- get_noise(X = X, noise_method = noise_method)
+  
+  f <- get_f(X = X, M = M, data_model = data_model)
+
+  Y <- f + noise + (X>=cutoff) * tau
+  
+  #Y <- f + noise + (X>=cutoff) * tau *(1 + X)^2
+  
+  data <- list(Y = Y, X = X, tau = tau, cutoff = cutoff, M = M)
+  
+  return(data)
+}
+
+
+get_noise <- function(X, noise_method){
+  
+  n <- length(X)
+  
+  if (noise_method ==  "homoscedastic"){
+    var <- 0.25
+  }
+  
+  if (noise_method == "cluster_2"){
+    group_size <- 2
+    groups <- cut(X, breaks = group_size, labels = FALSE)
+    var_groups <- seq(0.5,2.5, length.out = group_size)
+    var <-  var_groups[groups]
+  }
+  
+  if (noise_method == "linear"){
+    var <- 0.25*(1+X)
+  }
+  
+  if (noise_method == "quadratic"){
+    var <- 0.25*(1+X)^2
+  }
+  
+  if (noise_method == "cubic"){
+    var <- 0.25*(1+X)^3
+  }
+  
+  if (noise_method == "local") {
+    sigma_base <- 0.1
+    sigma_peak <- 3
+    k <- 5  # Controls the width of the peak
+    var<- sigma_base + sigma_peak * exp(-k * X^2)
+  }
+  
+  if (noise_method == "border") {
+    var<- 0.25*(1+sqrt(abs(X)))^2
+  }
+  
+  noise <- rnorm(n, mean = 0, sd = sqrt(var))
+  
+  return(noise)
+}
+
+
+get_f <- function(X, M, data_model){
   
   if(data_model == "design_1"){
     f <- f_design_1(X, M)
@@ -25,15 +80,8 @@ dgp <- function(data_model, n, M){
   if(data_model == "design_5"){
     f <- f_design_5(X, M)
   } 
-  if(data_model == "test"){
-    f <- f_design_6(X, M)
-  } 
-  # Observed outcome
-  Y <- f + noise + (X>=cutoff) * tau
   
-  data <- list(Y = Y, X = X, tau = tau, cutoff = cutoff, M = M)
-  
-  return(data)
+  return(f)
 }
 
 
@@ -50,6 +98,7 @@ f_design_1 <- function(X, M){
   )
   return(f)
 } 
+
 
 f_design_2 <- function(X, M){
   
@@ -109,21 +158,6 @@ f_design_5 <- function(X, M){
 } 
 
 
-f_design_6 <- function(X, M){
-  f <- sapply(X, function(x){
-    0.5 * M * 
-      (
-        (x+1)^2                 # x^2             ->     2x   ->   2   
-        - 2 * max(x, 0)^2       # x^2 -2x^2       ->    -2x   ->  -2 
-        - 4 * max(x - 0.6, 0)^2 # x^2 -2x^2 -4x^2 ->   -10x   -> -10
-        - 0.5
-      )  
-  }
-  )
-  return(f)
-} 
-
-
 show_dgp <- function(){
   n <- 10000
   X <- runif(n, -1, 1)
@@ -162,6 +196,7 @@ show_dgp <- function(){
   )
 }
 
+
 show_dgp_single_all_m <- function(design_num){
   n <- 10000
   X <- runif(n, -1, 1)
@@ -172,18 +207,14 @@ show_dgp_single_all_m <- function(design_num){
   
   data <- data.frame(
     X = X,
-    M_2 = f_design(X, 2),
     M_4 = f_design(X, 4),
-    M_6 = f_design(X, 6),
     M_8 = f_design(X, 8)
   )
   
   line = list(width = 1.5) 
   
   plotly::plot_ly(data, x = ~X) %>% 
-    add_trace(y = ~M_2, line = line, name = 'M: 2', type = 'scatter', mode = 'lines') %>% 
     add_trace(y = ~M_4, line = line, name = 'M: 4', type = 'scatter', mode = 'lines') %>% 
-    add_trace(y = ~M_6, line = line, name = 'M: 6', type = 'scatter', mode = 'lines') %>% 
     add_trace(y = ~M_8, line = line, name = 'M: 8', type = 'scatter', mode = 'lines') %>%
     layout(
       xaxis = list(

@@ -1,16 +1,10 @@
-mrot <- function(X, Y, method, c = NULL, p = 3, nknots = 3) {
+mrot <- function(X, Y, method, c = 0, p = 3, nknots = 3, h = 0.1) {
   
-  if (is.null(c)){
-    list_df <- list(
-      df_all  = data.frame(X = X, Y = Y)
-    )
-  }else{
-    list_df <- list(
-      df_above_c  = data.frame(X = X[X >= c], Y = Y[X >= c]),
-      df_below_c  = data.frame(X = X[X <  c], Y = Y[X <  c])
-    ) 
-  }
-  
+  list_df <- list(
+    df_above_c  = data.frame(X = X[X >= c], Y = Y[X >= c]),
+    df_below_c  = data.frame(X = X[X <  c], Y = Y[X <  c])
+  ) 
+ 
   f2_maxima <- c()
 
   for (i in 1:length(list_df)){
@@ -32,7 +26,12 @@ mrot <- function(X, Y, method, c = NULL, p = 3, nknots = 3) {
      if (method == "spline"){
        f2_maxima[i] <- mrot_spline(X = df$X, Y = df$Y, nknots = nknots, p = p)
      }
-
+    
+     if (method == "locpoly"){
+       
+       f2_maxima[i] <- mrot_locpoly(X = df$X, Y = df$Y, cutoff = c, h = h, p = p)
+     }
+     
   }
 
   
@@ -173,4 +172,20 @@ mrot_lower_bound <- function(X, Y, cutoff, alpha, s){
   )$estimate
   
   return(m_hat)
+}
+
+
+mrot_locpoly <- function(X, Y, cutoff, p, h){
+  
+  r <- KernSmooth::locpoly(
+     X,Y,
+     drv = 2,
+     degree = p,
+     kernel = "triangular",
+     bandwidth = h
+   )
+  
+  f2_max <- abs(r$y[which.min(abs(r$x - cutoff))])
+  
+  return(f2_max)
 }

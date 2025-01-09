@@ -30,16 +30,24 @@ data_model <- c(
 )
 
 
-mrot_method <- c("true_m")
-M <- c(4,8)
+mrot_method <- c("true_m","poly_p_4")
+M <- c(4)
+se_method_J <- c(3,6,9)
+  
+noise_method <- c(
+  "homoscedastic",
+  "local",
+  "border",
+  "linear",
+  "quadratic"
+)
+
 kernel <- c("triangular")
 
 # Methods with uniform bandwidth
 uniform_params <- tibble::tribble(
   ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
-   "honest",      "MSE",               TRUE,      "nn",
-   "honest",     "FLCI",               TRUE,      "nn",
-      "rbc",      "MSE",               TRUE,      "nn"
+  "honest",      "MSE",               TRUE,      "nn"
 ) 
 
 uniform_grid <- expand.grid(
@@ -47,18 +55,18 @@ uniform_grid <- expand.grid(
   data_model  = data_model,
   mrot_method = mrot_method,
   M           = M,
-  kernel      = kernel
+  noise_method = noise_method,
+  kernel      = kernel,
+  se_method_J = se_method_J 
 )
-  
+
 
 uniform_params_expanded <- dplyr::cross_join(uniform_params, uniform_grid)
 
 # Methods with no uniform bandwidth
 not_uniform_params <- tibble::tribble(
-     ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
-          "rbc",      "MSE",               FALSE,      "nn",
-          "rbc",       "CE",               FALSE,      "nn",
- "conventional",      "MSE",               FALSE,      "nn"
+  ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
+  "rbc",      "MSE",               FALSE,      "nn"
 )
 
 not_uniform_grid <- expand.grid(
@@ -66,7 +74,9 @@ not_uniform_grid <- expand.grid(
   data_model  = data_model,
   mrot_method = NA,
   M           = M,
-  kernel      = kernel
+  noise_method = noise_method,
+  kernel      = kernel,
+  se_method_J = se_method_J
 )
 
 not_uniform_params_expanded <- dplyr::cross_join(not_uniform_params, not_uniform_grid)
@@ -76,7 +86,7 @@ not_uniform_params_expanded <- dplyr::cross_join(not_uniform_params, not_uniform
 coverage_prob_grid <- rbind(not_uniform_params_expanded, uniform_params_expanded)
 
 grid_length <- nrow(coverage_prob_grid)
-  
+
 # Estimate coverage probability for all combinations
 for (i in c(1:grid_length)){
   
@@ -88,11 +98,13 @@ for (i in c(1:grid_length)){
     n                 = as.integer(param$n),
     mrot_method       = as.character(param$mrot_method),
     M                 = as.integer(param$M),
+    noise_method      = as.character(param$noise_method),
     kernel            = as.character(param$kernel),
     ci_method         = as.character(param$ci_method),
     bw_method         = as.character(param$bw_method),
     bw_method_uniform = as.logical(param$bw_method_uniform),
     se_method         = as.character(param$se_method),
+    se_method_J       = as.integer(param$se_method_J),
     alpha             = alpha
   )
   
@@ -111,9 +123,12 @@ for (i in c(1:grid_length)){
   
 }
 
-ci_methods <- coverage_prob_grid
-
-plot_compare_ci_mse_methods(ci_methods)
-
-
-
+coverage_prob_grid %>%
+  group_by(ci_method, noise_method,se_method_J, mrot_method) %>%
+  summarize(
+    m_hat = paste0(min(round( m_hat,2))," - ", max(round(m_hat,2))),
+    cp = paste0(min(round(coverage_prob*100)),"% - ", max(round(coverage_prob*100)),"%"),
+    il = mean(interval_length),
+    sd = paste0(min(round(tau_hat_se,2))," - ", max(round(tau_hat_se,2)))
+  ) %>%
+  arrange(ci_method, mrot_method)

@@ -8,6 +8,7 @@ rd <- function(
   bw_method,
   bw_method_uniform,
   se_method,
+  se_method_J,
   alpha
 ){
   # Since RDHonest::RDHonest and rdrobust::rdrobust have different bandwidth
@@ -42,6 +43,7 @@ rd <- function(
       kern          = kernel,
       opt.criterion = bw_method_mapped,
       se.method     = se_method,
+      J             = se_method_J,
       alpha         = alpha
     )
     
@@ -63,7 +65,7 @@ rd <- function(
       p        = 1, #local linear regression,
       kernel   = kernel,
       vce      = se_method,
-      nnmatch  = 3,
+      nnmatch  = se_method_J,
       level    = (1-alpha)*100,
       bwselect = bw_method_mapped,
       scaleregul = scaleregul
@@ -88,7 +90,7 @@ rd <- function(
       q        = 2, #bias estimation using local quadratic regression
       kernel   = kernel,
       vce      = se_method,
-      nnmatch  = 3,
+      nnmatch  = se_method_J,
       level    = (1-alpha)*100,
       bwselect = bw_method_mapped,
       scaleregul = scaleregul 
@@ -115,6 +117,7 @@ rd <- function(
       kern          = kernel,
       opt.criterion = bw_method_mapped,
       se.method     = se_method,
+      J             = se_method_J,
       alpha         = alpha
     )
     
@@ -129,7 +132,7 @@ rd <- function(
       q      = 2, #bias estimation using local quadratic regression
       kernel = kernel,
       vce    = se_method,
-      nnmatch= 3,
+      nnmatch  = se_method_J,
       level  = (1-alpha)*100,
       h      = h_hat,
       b      = h_hat

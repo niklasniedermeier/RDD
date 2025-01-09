@@ -1,15 +1,15 @@
 
 # Analysis of CI Methods
-plot_compare_ci_mse_methods <- function(grid){
+plot_compare_ci_methods <- function(grid){
   
-  ci_analysis <- coverage_prob_grid %>% dplyr::mutate(
+  ci_analysis <- grid %>% dplyr::mutate(
     data_model = gsub(".*_(\\d+)$", "\\1", data_model),
     bw_method_extended = paste0(bw_method, " (ci = ",ci_method,", uni = ",bw_method_uniform,", bw = ",bw_method,")") 
   ) %>% dplyr::arrange(
     .data$ci_method
-  ) %>% dplyr::filter(
-    bw_method == "MSE"
-  ) 
+  ) #%>% dplyr::filter(
+    #bw_method == "MSE"
+  #) 
   
   line = list(width = 2) # Set line width here
   marker = list(size = 4)
@@ -34,6 +34,8 @@ plot_compare_ci_mse_methods <- function(grid){
   y_range_bw      <-   c(0.25, 0.7)
   y_title_bw      <- TeX("\\hat{h}")
   
+  x_title         <- TeX("\\text{DGP}")
+  
   dotted_line <- list(
     list(
       type = "line",
@@ -48,6 +50,369 @@ plot_compare_ci_mse_methods <- function(grid){
       )
     )
   )
+  
+  annotations = list( 
+    list( 
+      x = 0.5,  
+      y = 1,  
+      text = TeX("\\text{M = 4}"),  
+      xref = "paper",  
+      yref = "paper",  
+      xanchor = "center",  
+      yanchor = "bottom",  
+      showarrow = FALSE 
+    ),  
+    list( 
+      x = 0.5,  
+      y = 0.5,  
+      text = TeX("\\text{M = 8}"),  
+      xref = "paper",  
+      yref = "paper",  
+      xanchor = "center",  
+      yanchor = "bottom",  
+      showarrow = FALSE 
+    )
+  )
+  
+  unique_methods <- ci_analysis %>% 
+    dplyr::select(.data$bw_method_extended) %>% 
+    dplyr::pull() %>% 
+    unique()
+  
+  plotly_colors <- c(
+    "#1f77b4",  # blue
+    "#ff7f0e",  # orange
+    "#2ca02c",  # green
+    "#d62728",  # red
+    "#9467bd",  # purple
+    "#8c564b",  # brown
+    "#e377c2",  # pink
+    "#7f7f7f"  # gray
+  )  
+  plotly_colors <- plotly_colors[1:length(unique_methods)]
+  
+  setNames(unique_methods, plotly_colors)
+  
+  ########## M = 4
+  
+  # Interval length
+  
+  plot_il_m_4 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==4),
+    x = ~data_model, 
+    y = ~interval_length, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    marker = marker,
+    line = line,
+    type = 'scatter', 
+    mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_il,
+        tickvals = y_tickvals_il,
+        range   = y_range_il   
+      ),
+      xaxis = list(
+        title = x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  # Bias
+  
+  plot_bias_m_4 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==4),
+    x = ~data_model, 
+    y = ~tau_hat-0.25, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_bias,
+        tickvals = y_tickvals_bias,
+        range   = y_range_bias   
+      ),
+      xaxis = list(
+        title = x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  # SE
+  
+  plot_se_m_4 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==4),
+    x = ~data_model, 
+    y = ~tau_hat_se, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_se,
+        tickvals = y_tickvals_se,
+        range   = y_range_se   
+      ),
+      xaxis = list(
+        title =  x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  
+  # CP
+  
+  plot_cp_m_4 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==4),
+    x = ~data_model, 
+    y = ~coverage_prob, 
+    color = ~bw_method_extended,
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_cp,
+        tickvals = y_tickvals_cp,
+        range   = y_range_cp   
+      ),
+      xaxis = list(
+        title =  x_title
+      ),
+      shapes = dotted_line
+    )  %>%
+    config(mathjax = "cdn")
+  
+  # BW 
+  
+  plot_bw_m_4 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==4),
+    x = ~data_model, 
+    y = ~h_hat, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_bw,
+        tickvals = y_tickvals_bw,
+        range   = y_range_bw   
+      ),
+      xaxis = list(
+        title =  x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  ######## M = 8
+  
+  # Interval length
+  
+  plot_il_m_8 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==8),
+    x = ~data_model, 
+    y = ~interval_length, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter', 
+    mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_il,
+        tickvals = y_tickvals_il,
+        range   = y_range_il   
+      ),
+      xaxis = list(
+        title = x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  # Bias
+  
+  plot_bias_m_8 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==8),
+    x = ~data_model, 
+    y = ~tau_hat-0.25, 
+    color = ~bw_method_extended,
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_bias,
+        tickvals = y_tickvals_bias,
+        range   = y_range_bias   
+      ),
+      xaxis = list(
+        title = x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  # SE
+  
+  plot_se_m_8 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==8),
+    x = ~data_model, 
+    y = ~tau_hat_se, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_se,
+        tickvals = y_tickvals_se,
+        range   = y_range_se   
+      ),
+      xaxis = list(
+        title = x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  
+  # CP
+  
+  plot_cp_m_8 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==8),
+    x = ~data_model, 
+    y = ~coverage_prob, 
+    color = ~bw_method_extended, 
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_cp,
+        tickvals = y_tickvals_cp,
+        range   = y_range_cp   
+      ),
+      xaxis = list(
+        title = x_title
+      ),
+      shapes = dotted_line
+    ) %>%
+    config(mathjax = "cdn")
+  
+  # BW
+  
+  plot_bw_m_8 <- plotly::plot_ly(
+    ci_analysis %>% dplyr::filter(M==8),
+    x = ~data_model, 
+    y = ~h_hat, 
+    color = ~bw_method_extended,
+    colors = plotly_colors,
+    line = line,
+    marker = marker,
+    type = 'scatter'
+    , mode = 'lines+markers',
+    showlegend = F
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_bw,
+        tickvals = y_tickvals_bw,
+        range   = y_range_bw   
+      ),
+      xaxis = list(
+        title = x_title
+      )
+    ) %>%
+    config(mathjax = "cdn")
+  
+  plot <- subplot(plot_bias_m_4,  
+                  plot_se_m_4,   
+                  plot_cp_m_4,    
+                  plot_il_m_4,  
+              
+                  plot_bias_m_8,
+                  plot_se_m_8,
+                  plot_cp_m_8,
+                  plot_il_m_8,
+                  
+                  nrows = 2,
+                  margin = 0.05,
+                  titleX = T,
+                  titleY = T,
+                  shareX = TRUE
+  ) %>% 
+    layout(title = paste0("M = ",unique(ci_analysis$M)),
+           legend = list(x = 0,y = -0.15,
+                         orientation = "h",
+                         #tracegroupgap = 1,
+                         font = list(size = 10)
+           ),
+           annotations = annotations
+
+    ) %>%
+    config(mathjax = "cdn")
+  
+  plot
+}
+
+
+## BW plot
+plot_compare_h_methods <- function(grid){
+  
+  ci_analysis <- grid %>% 
+    distinct(M, data_model, bw_method, bw_method_uniform, .keep_all = TRUE) %>%
+    dplyr::mutate(
+      data_model         = gsub(".*_(\\d+)$", "\\1", data_model),
+      bw_method_extended = paste0(bw_method, " (uni = ",bw_method_uniform,")") 
+    ) %>% dplyr::arrange(
+      .data$ci_method
+    ) 
+  
+  line = list(width = 2) 
+  marker = list(size = 4)
+  
+  y_tickvals_bw   <- seq(0.3, 0.7, 0.1)
+  y_range_bw      <-   c(0.25, 0.7)
+  y_title_bw      <- TeX("\\hat{h}")
+  
+  x_title         <- TeX("\\text{DGP}")
   
   annotations = list( 
     list( 
@@ -71,115 +436,30 @@ plot_compare_ci_mse_methods <- function(grid){
       showarrow = FALSE 
     )
   )
-    
-  ########## M = 4
   
-  # Interval length
+  unique_methods <- ci_analysis %>% 
+    dplyr::select(.data$bw_method_extended) %>% 
+    dplyr::pull() %>% 
+    unique()
   
-  plot_il_m_4 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==4),
-    x = ~data_model, 
-    y = ~interval_length, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter', 
-    mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_il,
-        tickvals = y_tickvals_il,
-        range   = y_range_il   
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
+  plotly_colors <- c(
+    "#7f7f7f",  # gray
+    "#9467bd",  # purple
+    "#d62728",  # red
+    "#2ca02c"  # green
+  )  
+  plotly_colors <- plotly_colors[1:length(unique_methods)]
   
-  # Bias
-  
-  plot_bias_m_4 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==4),
-    x = ~data_model, 
-    y = ~tau_hat-0.25, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_bias,
-        tickvals = y_tickvals_bias,
-        range   = y_range_bias   
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  # SE
-  
-  plot_se_m_4 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==4),
-    x = ~data_model, 
-    y = ~tau_hat_se, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
+  setNames(unique_methods, plotly_colors)
 
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_se,
-        tickvals = y_tickvals_se,
-        range   = y_range_se   
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  
-  # CP
-  
-  plot_cp_m_4 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==4),
-    x = ~data_model, 
-    y = ~coverage_prob, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_cp,
-        tickvals = y_tickvals_cp,
-        range   = y_range_cp   
-      ),
-      xaxis = list(
-        title = "DGP"
-      ),
-      shapes = dotted_line
-    )
-  
-  # BW 
+  ########## M = 4
   
   plot_bw_m_4 <- plotly::plot_ly(
     ci_analysis %>% dplyr::filter(M==4),
     x = ~data_model, 
     y = ~h_hat, 
     color = ~bw_method_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -193,117 +473,19 @@ plot_compare_ci_mse_methods <- function(grid){
         range   = y_range_bw   
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title
       )
-    )
+    ) %>%
+    config(mathjax = "cdn")
   
   ######## M = 8
-  
-  # Interval length
-  
-  plot_il_m_8 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==8),
-    x = ~data_model, 
-    y = ~interval_length, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter', 
-    mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_il,
-        tickvals = y_tickvals_il,
-        range   = y_range_il   
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  # Bias
-  
-  plot_bias_m_8 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==8),
-    x = ~data_model, 
-    y = ~tau_hat-0.25, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_bias,
-        tickvals = y_tickvals_bias,
-        range   = y_range_bias   
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  # SE
-  
-  plot_se_m_8 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==8),
-    x = ~data_model, 
-    y = ~tau_hat_se, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_se,
-        tickvals = y_tickvals_se,
-        range   = y_range_se   
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  
-  # CP
-  
-  plot_cp_m_8 <- plotly::plot_ly(
-    ci_analysis %>% dplyr::filter(M==8),
-    x = ~data_model, 
-    y = ~coverage_prob, 
-    color = ~bw_method_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_cp,
-        tickvals = y_tickvals_cp,
-        range   = y_range_cp   
-      ),
-      xaxis = list(
-        title = "DGP"
-      ),
-      shapes = dotted_line
-    )
-  
-  # BW
-  
+
   plot_bw_m_8 <- plotly::plot_ly(
     ci_analysis %>% dplyr::filter(M==8),
     x = ~data_model, 
     y = ~h_hat, 
-    color = ~bw_method_extended, 
+    color = ~bw_method_extended,
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -317,22 +499,19 @@ plot_compare_ci_mse_methods <- function(grid){
         range   = y_range_bw   
       ),
       xaxis = list(
-        title = "DGP"
+        title = x_title
       )
-    )
+    ) %>%
+    config(mathjax = "cdn")
   
-  plot <- subplot(plot_bw_m_4,    plot_bw_m_8,
-                  plot_bias_m_4,  plot_bias_m_8,
-                  plot_se_m_4,    plot_se_m_8,
-                  plot_cp_m_4,    plot_cp_m_8,
-                  plot_il_m_4,    plot_il_m_8,
-                  
-                  nrows = 5,
-                  margin = 0.02,
+  plot <- subplot(plot_bw_m_4,    
+                  plot_bw_m_8,
+                  nrows = 1,
+                  margin = 0.05,
                   titleX = T,
                   titleY = T,
-                  shareX = TRUE,
-                  shareY = TRUE
+                  shareY = TRUE,
+                  shareX = TRUE
   ) %>% 
     layout(title = paste0("M = ",unique(ci_analysis$M)),
            legend = list(x = 0,y = -0.15,
@@ -341,7 +520,7 @@ plot_compare_ci_mse_methods <- function(grid){
                          font = list(size = 10)
            ),
            annotations = annotations
-
+           
     ) %>%
     config(mathjax = "cdn")
   
@@ -350,14 +529,14 @@ plot_compare_ci_mse_methods <- function(grid){
 
 
 
+## MROT Plot
 plot_compare_mrot_methods <- function(grid){
   mrot_analysis <- grid %>% 
     dplyr::mutate(
       data_model = gsub(".*_(\\d+)$", "\\1", data_model),
-      mrot_extended = paste0("mrot = ",mrot_method) 
-    ) %>% arrange(
-      M,
-      mrot_extended
+      mrot_extended = as.character(mrot_method) 
+    ) %>% dplyr::arrange(
+      M, mrot_method
     )
   
   line = list(width = 2) # Set line width here
@@ -379,6 +558,8 @@ plot_compare_mrot_methods <- function(grid){
   y_range_il      <-   c(0.4, 1)
   y_title_il      <- TeX("\\text{IL}(\\hat{\\tau})")
   
+  x_title         <- TeX("\\text{DGP}")
+  
   dotted_line <- list(
     list(
       type = "line",
@@ -398,16 +579,6 @@ plot_compare_mrot_methods <- function(grid){
     list( 
       x = 0.45,  
       y = 1,  
-      text = TeX("\\text{M = 2}"),  
-      xref = "paper",  
-      yref = "paper",  
-      xanchor = "center",  
-      yanchor = "bottom",  
-      showarrow = FALSE 
-    ),  
-    list( 
-      x = 0.45,  
-      y = 0.75,  
       text = TeX("\\text{M = 4}"),  
       xref = "paper",  
       yref = "paper",  
@@ -418,16 +589,6 @@ plot_compare_mrot_methods <- function(grid){
     list( 
       x = 0.45,  
       y = 0.5,  
-      text = TeX("\\text{M = 6}"),  
-      xref = "paper",  
-      yref = "paper",  
-      xanchor = "center",  
-      yanchor = "bottom",  
-      showarrow = FALSE 
-    ),
-    list( 
-      x = 0.45,  
-      y = 0.25,  
       text = TeX("\\text{M = 8}"),  
       xref = "paper",  
       yref = "paper",  
@@ -437,111 +598,35 @@ plot_compare_mrot_methods <- function(grid){
     )
   )
   
-  ######### M = 2
-  # Bias
+  unique_methods <- mrot_analysis %>% select(.data$mrot_extended) %>% pull() %>% unique()
+
+  plotly_colors <- c(
+    "#1f77b4",  # blue
+    "#ff7f0e",  # orange
+    "#2ca02c",  # green
+    "#d62728",  # red
+    "#9467bd",  # purple
+    "#8c564b",  # brown
+    "#e377c2",  # pink
+    "#7f7f7f",  # gray
+    "#bcbd22",  # yellow
+    "#17becf"   # cyan
+  )  
+  plotly_colors = plotly_colors[1:length(unique_methods)]
   
-  plot_bias_m_2 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 2),
-    x = ~data_model, 
-    y = ~m_hat-M, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_bias,
-        tickvals = y_tickvals_bias,
-        range   = y_range_bias 
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    ) 
-  
-  # SD
-  
-  plot_sd_m_2 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 2),
-    x = ~data_model, 
-    y = ~m_sd, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_sd,
-        title = y_title_sd,
-        tickvals = y_tickvals_sd,
-        range   = y_range_sd 
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  plot_cp_m_2 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 2),
-    x = ~data_model, 
-    y = ~coverage_prob, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_cp,
-        tickvals = y_tickvals_cp,
-        range   = y_range_cp 
-      ),
-      xaxis = list(
-        title = "DGP"
-      ),
-      shapes = dotted_line
-    )
-  
-  # IL
-  plot_il_m_2 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 2),
-    x = ~data_model, 
-    y = ~interval_length, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  )  %>% 
-    layout(
-      yaxis = list(
-        title = y_title_il,
-        tickvals = y_tickvals_il,
-        range   = y_range_il  
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
+  setNames(unique_methods, plotly_colors)
   
   ######### M = 4
   # Bias
   
+  mrot_analysis_4 <- mrot_analysis %>% dplyr::filter(M == 4)
+  
   plot_bias_m_4 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 4),
+    mrot_analysis_4 ,
     x = ~data_model, 
     y = ~m_hat-M, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -555,17 +640,19 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_bias 
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       )
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   # SD
   
   plot_sd_m_4 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 4),
+    mrot_analysis_4 ,
     x = ~data_model, 
     y = ~m_sd, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -580,16 +667,18 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_sd 
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       )
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   # CP 
   plot_cp_m_4 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 4),
+    mrot_analysis_4 ,
     x = ~data_model, 
     y = ~coverage_prob, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -604,17 +693,19 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_cp   
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       ),
       shapes = dotted_line
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   # IL
   plot_il_m_4 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 4),
+    mrot_analysis_4 ,
     x = ~data_model, 
     y = ~interval_length, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -629,117 +720,22 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_il  
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       )
-    )
+    )%>%
+    config(mathjax = "cdn")
   
-  ######### M = 6
-  # Bias
-  
-  plot_bias_m_6 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 6),
-    x = ~data_model, 
-    y = ~m_hat-M, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_bias,
-        tickvals = y_tickvals_bias,
-        range   = y_range_bias 
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  # SD
-  
-  plot_sd_m_6 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 6),
-    x = ~data_model, 
-    y = ~m_sd, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_sd,
-        tickvals = y_tickvals_sd,
-        range   = y_range_sd 
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
-  
-  
-  # CP 
-  plot_cp_m_6 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 6),
-    x = ~data_model, 
-    y = ~coverage_prob, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_cp,
-        tickvals = y_tickvals_cp,
-        range   = y_range_cp   
-      ),
-      xaxis = list(
-        title = "DGP"
-      ),
-      shapes = dotted_line
-    )
-  
-  # IL
-  plot_il_m_6 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 6),
-    x = ~data_model, 
-    y = ~interval_length, 
-    color = ~mrot_extended, 
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_il,
-        tickvals = y_tickvals_il,
-        range   = y_range_il  
-      ),
-      xaxis = list(
-        title = "DGP"
-      )
-    )
   ######### M = 8
   # Bias
   
+  mrot_analysis_8 <- mrot_analysis %>% dplyr::filter(M == 8)
+  
   plot_bias_m_8 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 8),
+    mrot_analysis_8,
     x = ~data_model, 
     y = ~m_hat-M, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -753,17 +749,19 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_bias 
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       )
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   # SD
   
   plot_sd_m_8 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 8),
+    mrot_analysis_8,
     x = ~data_model, 
     y = ~m_sd, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -778,17 +776,19 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_sd 
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       )
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   
   # CP 
   plot_cp_m_8 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 8),
+    mrot_analysis_8,
     x = ~data_model, 
     y = ~coverage_prob, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -803,17 +803,19 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_cp   
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       ),
       shapes = dotted_line
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   # IL
   plot_il_m_8 <- plotly::plot_ly(
-    mrot_analysis %>% dplyr::filter(M == 8),
+    mrot_analysis_8,
     x = ~data_model, 
     y = ~interval_length, 
     color = ~mrot_extended, 
+    colors = plotly_colors,
     line = line,
     marker = marker,
     type = 'scatter'
@@ -828,36 +830,27 @@ plot_compare_mrot_methods <- function(grid){
         range   = y_range_il  
       ),
       xaxis = list(
-        title = "DGP"
+        title =  x_title 
       )
-    )
+    )%>%
+    config(mathjax = "cdn")
   
   plot <- subplot(
-    plot_bias_m_2,
-    plot_sd_m_2,
-    plot_cp_m_2,
-    plot_il_m_2,
     plot_bias_m_4,
     plot_sd_m_4,
     plot_cp_m_4,
     plot_il_m_4,
-    plot_bias_m_6,
-    plot_sd_m_6,
-    plot_cp_m_6,
-    plot_il_m_6,
     plot_bias_m_8,
     plot_sd_m_8,
     plot_cp_m_8,
     plot_il_m_8,
-    nrows = 4,
+    nrows = 2,
     margin = 0.05,
     titleX = T,
     titleY = T,
-    shareX = TRUE,
-    heights = rep(0.25,4)
+    shareX = TRUE
   ) %>% 
-    layout(title = paste0("M = ",unique(mrot_analysis$M)),
-           legend = list(x = 0,y = 1.1,
+    layout(legend = list(x = 0,y = 1.2,
                          orientation = "h",
                          tracegroupgap = 1,
                          font = list(size = 10)
