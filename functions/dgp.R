@@ -27,13 +27,6 @@ get_noise <- function(X, noise_method){
     var <- 0.25
   }
   
-  if (noise_method == "cluster_2"){
-    group_size <- 2
-    groups <- cut(X, breaks = group_size, labels = FALSE)
-    var_groups <- seq(0.5,2.5, length.out = group_size)
-    var <-  var_groups[groups]
-  }
-  
   if (noise_method == "linear"){
     var <- 0.25*(1+X)
   }
@@ -42,15 +35,8 @@ get_noise <- function(X, noise_method){
     var <- 0.25*(1+X)^2
   }
   
-  if (noise_method == "cubic"){
-    var <- 0.25*(1+X)^3
-  }
-  
-  if (noise_method == "local") {
-    sigma_base <- 0.1
-    sigma_peak <- 3
-    k <- 5  # Controls the width of the peak
-    var<- sigma_base + sigma_peak * exp(-k * X^2)
+  if (noise_method == "center") {
+    0.05  + 0.8 * exp(-5 * X^2)
   }
   
   if (noise_method == "border") {
@@ -226,6 +212,48 @@ show_dgp_single_all_m <- function(design_num){
       legend = list(x = 0.07, y = 1.035)
     )
 }
+
+show_noise_var <- function(){
+  n <- 10000
+  X <- runif(n, -1, 1)
+  
+  X <- sort(X)
+  
+  M <- 4
+  
+  data <- data.frame(
+    X = X,
+    base = 0.25,
+    linear =  0.25*(1+X),
+    quadratic =  0.25*(1+X)^2,
+    center = 0.05  + 0.8 * exp(-5 * X^2),
+    border = 0.25*(1+sqrt(abs(X)))^2
+  )
+  
+  line = list(width = 2) 
+  
+  plotly::plot_ly(data, x = ~X) %>% 
+    add_trace(y = ~base, line = list(dash = 'dash', width = 1, color = "grey"), name = 'base', type = 'scatter', mode = 'lines') %>% 
+    add_trace(y = ~linear, line = line, name = 'linear', type = 'scatter', mode = 'lines') %>% 
+    add_trace(y = ~quadratic, line = line, name = 'quadratic', type = 'scatter', mode = 'lines') %>% 
+    add_trace(y = ~center, line = line, name = 'center', type = 'scatter', mode = 'lines') %>%
+    add_trace(y = ~border, line = line, name = 'border', type = 'scatter', mode = 'lines') %>%
+    layout(
+      xaxis = list(
+        title = TeX("X_i"),
+        tickvals = c(-1.0, -0.5, 0.0, 0.5, 1.0)
+      ), 
+      yaxis = list(
+        title = TeX("\\sigma^2(X_i)"),
+        tickvals = c(0,0.5,1),
+        range = c(0,1)
+      ), 
+      legend = list(x = 0.025, y = 0.27)
+    ) %>%
+    config(mathjax = "cdn")
+}
+
+show_noise_var()
 
 #show_dgp_single_all_m(1) 
 #show_dgp_single_all_m(2) 

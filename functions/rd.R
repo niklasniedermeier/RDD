@@ -53,6 +53,8 @@ rd <- function(
     conf.high <- rd.honest.fit$coefficients$conf.high
     h_hat     <- rd.honest.fit$coefficients$bandwidth
     b_hat     <- NA
+    cv        <- rd.honest.fit$coefficients$cv
+    pv        <- rd.honest.fit$coefficients$p.value
   }
   
   # Conventional
@@ -77,6 +79,8 @@ rd <- function(
     conf.high <- rd.robust.fit$ci[1,"CI Upper"]
     h_hat     <- rd.robust.fit$bws[1,1]
     b_hat     <- NA
+    cv        <- NA
+    pv <- rd.robust.fit$pv[1]
   }
   
   # Calonico, Cattaneo, Farrell and Titiunik
@@ -102,6 +106,8 @@ rd <- function(
     conf.high <- rd.robust.fit$ci[3,"CI Upper"]
     h_hat     <- rd.robust.fit$bws[1,1]
     b_hat     <- rd.robust.fit$bws[2,1]
+    cv        <- NA
+    pv        <- rd.robust.fit$pv[3]
   }
   
   # Combination of Armstrong et al and Calonico et al
@@ -144,6 +150,8 @@ rd <- function(
     conf.high <- rd.robust.fit$ci[3,"CI Upper"]
     h_hat     <- rd.robust.fit$bws[1,1]
     b_hat     <- rd.robust.fit$bws[2,1]
+    cv        <- NA
+    pv        <- rd.robust.fit$pv[3]
   }
   
   function_arguments <- data.frame(
@@ -163,7 +171,9 @@ rd <- function(
     conf.low   = conf.low, 
     conf.high  = conf.high,
     h_hat      = h_hat,
-    b_hat      = b_hat  
+    b_hat      = b_hat,
+    cv         = cv,
+    pv         = pv
   )
   
   return( cbind(function_arguments, estimation_results) )

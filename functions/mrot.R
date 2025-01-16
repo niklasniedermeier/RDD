@@ -1,5 +1,10 @@
 mrot <- function(X, Y, method, c = 0, p = 3, nknots = 3, h = 0.1) {
   
+  is_data_valid <- (!is.na(X)) & (!is.na(Y))
+  
+  X <- X[is_data_valid]
+  Y <- Y[is_data_valid]
+    
   list_df <- list(
     df_above_c  = data.frame(X = X[X >= c], Y = Y[X >= c]),
     df_below_c  = data.frame(X = X[X <  c], Y = Y[X <  c])
@@ -52,14 +57,29 @@ mrot_poly <- function(X, Y, p){
     f2_max <- abs(2 * model_coef[[3]])
   }
   
-  if (p > 2){
+  if (p == 3){
+    f2 <- function(x) abs(2*model_coef[3] + 6*x*model_coef[4])
+    f2_max <- max( f2(min(X)), f2(max(X)) )
+  }
+  
+  if (p == 4){
+    f2 <- function(x) abs(2*model_coef[3]+6*x*model_coef[4]+12*x^2*model_coef[5])
+    ## maximum occurs either at endpoints, or else at the extremum,
+    ## -r1[4]/(4*r1[5]), if the extremum is in the support
+    X_opt <- if (abs(model_coef[5])<=1e-10) Inf else -model_coef[4] / (4*model_coef[5])
+    M <- max(f2(min(X)), f2(max(X)))
+    if (min(X) < X_opt && max(X) > X_opt) M <- max(f2(X_opt), M)
+    f2_max <- M
+  }
+  
+  if (p > 4){
     f2_max <- optimize(
       function(x) f2_poly(x, coef = model_coef, p = p), 
       interval = range(X), 
       maximum = TRUE
     )$objective 
   }
-  
+ 
   return(f2_max)
 }
 
@@ -169,7 +189,7 @@ mrot_lower_bound <- function(X, Y, cutoff, alpha, s){
     multiple = TRUE,
     alpha = alpha,
     sclass = "H"
-  )$estimate
+  )$conf.low #estimate
   
   return(m_hat)
 }

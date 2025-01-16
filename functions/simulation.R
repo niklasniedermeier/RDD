@@ -34,10 +34,10 @@ simulation_step <- function(
       m_hat <- as.numeric(sub("^M_([0-9]+(?:\\.[0-9]+)?)$", "\\1", mrot_method))
     }
     
-    if (mrot_method == "lower_bounds"){
+    if (mrot_method == "Kolesar_3"){
       # s denotes the number of neighboors
       # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
-      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = n/10)
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 5)
     }
     
     if (mrot_method == "poly_p_2"){
@@ -124,6 +124,7 @@ simulation_step <- function(
     conf.high         = conf.high,
     tau_hat           = rd_estimates$tau_hat,
     tau_hat_se        = rd_estimates$tau_hat_se,
+    cv                = rd_estimates$cv,
     h_hat             = rd_estimates$h_hat,
     b_hat             = rd_estimates$b_hat,
     m_hat             = m_hat
@@ -183,6 +184,7 @@ simulation <- function(
       tau_hat           = mean(simulations$tau_hat),
       h_hat             = mean(simulations$h_hat),
       b_hat             = mean(simulations$b_hat),
+      cv                = mean(simulations$cv),
       m_hat             = mean(simulations$m_hat),
       m_sd              = sd(simulations$m_hat),
       M                 = M

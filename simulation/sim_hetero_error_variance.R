@@ -29,11 +29,18 @@ data_model <- c(
   "design_5"
 )
 
-m_hat <- c(1,2,4,8,16)
-mrot_method <- paste0("M_",m_hat)
 
-
-M <- c(8)
+mrot_method <- c("true_m","poly_p_4")
+M <- c(4)
+se_method_J <- c(3)
+  
+noise_method <- c(
+  #"homoscedastic",
+  "center"
+  #"border",
+  #"linear",
+  #"quadratic"
+)
 
 kernel <- c("triangular")
 
@@ -48,10 +55,35 @@ uniform_grid <- expand.grid(
   data_model  = data_model,
   mrot_method = mrot_method,
   M           = M,
-  kernel      = kernel
+  noise_method = noise_method,
+  kernel      = kernel,
+  se_method_J = se_method_J 
 )
 
-coverage_prob_grid <- dplyr::cross_join(uniform_params, uniform_grid)
+
+uniform_params_expanded <- dplyr::cross_join(uniform_params, uniform_grid)
+
+# Methods with no uniform bandwidth
+not_uniform_params <- tibble::tribble(
+  ~ci_method, ~bw_method, ~bw_method_uniform, ~se_method,
+  "rbc",      "MSE",               FALSE,      "nn"
+)
+
+not_uniform_grid <- expand.grid(
+  n           = n,
+  data_model  = data_model,
+  mrot_method = NA,
+  M           = M,
+  noise_method = noise_method,
+  kernel      = kernel,
+  se_method_J = se_method_J
+)
+
+not_uniform_params_expanded <- dplyr::cross_join(not_uniform_params, not_uniform_grid)
+
+# Combine Grids
+
+coverage_prob_grid <- rbind(not_uniform_params_expanded, uniform_params_expanded)
 
 grid_length <- nrow(coverage_prob_grid)
 
@@ -66,11 +98,13 @@ for (i in c(1:grid_length)){
     n                 = as.integer(param$n),
     mrot_method       = as.character(param$mrot_method),
     M                 = as.integer(param$M),
+    noise_method      = as.character(param$noise_method),
     kernel            = as.character(param$kernel),
     ci_method         = as.character(param$ci_method),
     bw_method         = as.character(param$bw_method),
     bw_method_uniform = as.logical(param$bw_method_uniform),
     se_method         = as.character(param$se_method),
+    se_method_J       = as.integer(param$se_method_J),
     alpha             = alpha
   )
   
@@ -86,123 +120,25 @@ for (i in c(1:grid_length)){
   
   print(paste0(i," / ", grid_length))
   print(coverage_prob_grid[i,])
-  
 }
 
-y_tickvals_cp   <- seq(0, 1, 0.1)
-y_range_cp      <-   c(0, 1)
-y_title_cp      <- TeX("\\text{CP}(\\hat{\\tau})")
+#coverage_prob_grid <- readRDS("conditional_var_results.rds")
 
-y_tickvals_il   <- seq(0, 1, 0.2)
-y_range_il      <-   c(0, 1)
-y_title_il      <- TeX("\\text{IL}(\\hat{\\tau})")
-
-line = list(width = 2.5) # Set line width here
-marker = list(size = 4.5)
-
-height = 480
-dotted_line <- list(
-  list(
-    type = "line",
-    x0 = 1,  
-    x1 = 16,  
-    y0 = 0.95, 
-    y1 = 0.95, 
-    line = list(
-      dash = "dot",   
-      color = "grey", 
-      width = 2       
-    )
-  )
-)
-
-plotly_colors <- c(
-  "design_1" = "#1f77b4",  # blue
-  "design_2" = "#ff7f0e",  # orange
-  "design_3" = "#2ca02c",  # green
-  "design_4" = "#d62728",  # red
-  "design_5" = "#9467bd"  # purple
-)
-
-data <- coverage_prob_grid %>% 
-  dplyr::filter(mrot_method != "M_0.5") %>% 
-  dplyr::arrange(data_model) 
-
-x_title         <- TeX("\\hat{M}")
-x_tickvals      <- sort(unique(data$m_hat))
-x_range         <- c(min(x_tickvals)-0.1,max(x_tickvals)+0.1)
-
-cp <- plotly::plot_ly(
-  data,
-  x = ~m_hat, 
-  y = ~coverage_prob, 
-  color = ~data_model, 
-  colors = plotly_colors,
-  type = 'scatter', 
-  mode = 'lines+markers',
-  showlegend = T,
-  line = line,
-  marker = marker
-) %>% 
-  layout(
-    height = height,  
-    yaxis = list(
-      title = y_title_cp,
-      tickvals = y_tickvals_cp,
-      range   = y_range_cp   
-    ),
-    xaxis = list(
-      title = x_title,
-      tickvals = x_tickvals,
-      range = x_range   
-    ),
-    shapes = dotted_line
+summary <- coverage_prob_grid %>%
+  group_by(ci_method, noise_method,mrot_method,se_method_J) %>%
+  summarize(
+    m_hat = paste0(min(round( m_hat,2))," - ", max(round(m_hat,2))),
+    cp = paste0(min(round(coverage_prob*100)),"% - ", max(round(coverage_prob*100)),"%"),
+    il = mean(interval_length)
   ) %>%
-  config(mathjax = "cdn")
-
-il <- plotly::plot_ly(
-  data,
-  x = ~m_hat, 
-  y = ~interval_length, 
-  color = ~data_model,
-  colors = plotly_colors,
-  type = 'scatter', 
-  mode = 'lines+markers',
-  showlegend = F,
-  line = line,
-  marker = marker
-) %>% 
-  layout(
-    height = height,  
-    yaxis = list(
-      title = y_title_il,
-      tickvals = y_tickvals_il,
-      range   = y_range_il   
-    ),
-    xaxis = list(
-      title = x_title,
-      tickvals = x_tickvals,
-      range = x_range 
-    )
+  ungroup() %>%
+  group_by(noise_method, se_method_J) %>%
+  mutate(
+    div_helper = (ci_method == "honest" & mrot_method == "true_m") * il,
+    div = max(div_helper),
+    il = il / div
   ) %>%
-  config(mathjax = "cdn")
-
-
-
-subplot(
-  cp,
-  il,
-  nrows = 1,
-  margin = 0.05,
-  titleX = T,
-  titleY = T
-) %>% 
-  layout(
-    legend = list(x = 0.65,y = 0.4,
-                 orientation = "v",
-                 font = list(size = 12)
-     )
-
-  ) %>%
-  config(mathjax = "cdn")
-
+  ungroup() %>%
+  select(-c(div_helper,div)) %>%
+  arrange(noise_method, se_method_J, il) %>% 
+  filter(se_method_J == 3)
