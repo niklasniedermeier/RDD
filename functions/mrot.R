@@ -53,6 +53,18 @@ mrot_poly <- function(X, Y, p){
   model      <- lm(Y ~ poly(X, p, raw = TRUE))
   model_coef <- coef(model)
   
+  #cut_border = 0.10
+  #if (all(X>=0)){
+  #  border_cond <- X <= quantile(X,cut_border)
+  #  X = X[border_cond ] 
+  #  Y = Y[border_cond ]
+  #  
+  #}else{
+  #  border_cond <- X >= quantile(X,1-cut_border)
+  #  X = X[border_cond ] 
+  #  Y = Y[border_cond ]
+  #}
+  
   if (p == 2){
     f2_max <- abs(2 * model_coef[[3]])
   }
@@ -63,6 +75,7 @@ mrot_poly <- function(X, Y, p){
   }
   
   if (p == 4){
+    
     f2 <- function(x) abs(2*model_coef[3]+6*x*model_coef[4]+12*x^2*model_coef[5])
     ## maximum occurs either at endpoints, or else at the extremum,
     ## -r1[4]/(4*r1[5]), if the extremum is in the support
@@ -142,6 +155,19 @@ mrot_spline <- function(X, Y, nknots, p){
   
   Y_smooth_hat <- X_mat_smooth %*% beta_hat
   
+  
+  #cut_border = 1
+  #if (all(X_smooth>=0)){
+  #  border_cond <- X_smooth <= quantile(X_smooth,cut_border)
+  #  X_smooth = X_smooth[border_cond ] 
+  #  Y_smooth_hat = Y_smooth_hat[border_cond ]
+  #  
+  #}else{
+  #  border_cond <-  X_smooth >= quantile( X_smooth,1-cut_border)
+  #  X_smooth =  X_smooth[border_cond ] 
+  #  Y_smooth_hat = Y_smooth_hat[border_cond ]
+  #}
+  
   f2_max <- numerical_max_second_derivative(X = X_smooth, Y = Y_smooth_hat)
   
   return(f2_max)
@@ -155,10 +181,8 @@ f2_poly <- function(x, coef, p) {
 
 numerical_max_second_derivative <- function(X,Y) {
   
-  # Create a data frame for X and Y
   data <- data.frame(X = X, Y = Y)
   
-  # Compute second derivative using central difference
   data <- data %>%
     mutate(
       f2 = (lead(Y) - 2 * Y + lag(Y)) / (lead(X) - X)^2
@@ -169,7 +193,7 @@ numerical_max_second_derivative <- function(X,Y) {
 }
 
 
-mrot_lower_bound <- function(X, Y, cutoff, alpha, s){
+mrot_lower_bound <- function(X, Y, cutoff, alpha, s, estimate){
   
   rd.honest.fit <- suppressMessages(RDHonest::RDHonest(
     formula       = "Y ~ X", #outcome ~ running_variable 
@@ -182,14 +206,21 @@ mrot_lower_bound <- function(X, Y, cutoff, alpha, s){
     alpha         = alpha
   ))
   
-  m_hat <- RDHonest::RDSmoothnessBound(
+  m_hat_estimates <- RDHonest::RDSmoothnessBound(
     rd.honest.fit,
     s = s,
     separate = FALSE,
     multiple = TRUE,
     alpha = alpha,
     sclass = "H"
-  )$conf.low #estimate
+  )
+  
+  if (estimate == "hb"){
+    m_hat <- m_hat_estimates$estimate
+  }
+  if (estimate == "lower"){
+    m_hat <- m_hat_estimates$conf.low 
+  }
   
   return(m_hat)
 }

@@ -66,7 +66,9 @@ get_f <- function(X, M, data_model){
   if(data_model == "design_5"){
     f <- f_design_5(X, M)
   } 
-  
+  if(data_model == "design_6"){
+    f <- f_design_5(X, M)
+  } 
   return(f)
 }
 
@@ -138,6 +140,19 @@ f_design_5 <- function(X, M){
   f <- sapply(X, function(x){
     (1/2) * M * 
       ifelse(x>=0,-x^2,x^2)
+  }
+  )
+  return(f)
+} 
+
+f_design_6 <- function(X, M){
+  f <- sapply(X, function(x){
+    0.5 * M *  (
+      (x+1)^2                 # x^2             ->     2x   ->   2   
+      - 2 * max(x, 0)^2       # x^2 -2x^2       ->    -2x   ->  -2 
+      - 4 * max(x - 0.6, 0)^2 # x^2 -2x^2 -4x^2 ->   -10x   -> -10
+      - 0.5
+    )  
   }
   )
   return(f)

@@ -26,9 +26,61 @@ Y_placebo_pre <- data$mort_age59_related_preHS
 #############################################################
 ## Scatter and RD Plot, Head Start Data
 #############################################################
-ii <- which(Y<20 & !is.na(Y) & !is.na(Rraw))
-rdplot(Y[ii],Rraw[ii],c=59.1984,nbins=3000)
-rdplot(Y[ii],Rraw[ii],c=59.1984)
+ii <- which(!is.na(Y) & !is.na(Rraw))
+#rdplot(Y[ii],Rraw[ii],c=59.1984,nbins=3000)
+binned_plot <- rdplot(Y[ii],Rraw[ii],c=cutoff, p = 4, binselect = "esmv")
+
+X_bin <- binned_plot$vars_bins$rdplot_mean_x
+Y_bin <- binned_plot$vars_bins$rdplot_mean_y
+
+X_bin_poly <- binned_plot$vars_poly$rdplot_x
+Y_bin_poly <- binned_plot$vars_poly$rdplot_y
+
+plot_ly() %>%
+  add_trace(
+    x = ~X_bin, 
+    y = ~Y_bin, 
+    type = "scatter", 
+    mode = "markers", 
+    name = "Data Points", 
+    marker = list(color = "grey")
+    
+  ) %>%
+  add_trace(
+    x = ~X_bin_poly[X_bin_poly < cutoff], 
+    y = ~Y_bin_poly[X_bin_poly < cutoff],
+    type = "scatter", 
+    mode = "lines", 
+    name = "Fitted Line", 
+    line = list(color = "black")
+  ) %>%
+  add_trace(
+    x = ~X_bin_poly[X_bin_poly > cutoff], 
+    y = ~Y_bin_poly[X_bin_poly > cutoff],
+    type = "scatter", 
+    mode = "lines", 
+    name = "Fitted Line", 
+    line = list(color = "black")
+  ) %>%
+  layout(
+    xaxis = list(title = "Poverty Rate", titlefont = list(size = 16), tickfont = list(size = 14)),
+    yaxis = list(title = "Mortality Rate", titlefont = list(size = 16), tickfont = list(size = 14)),
+    showlegend = FALSE,
+    shapes = list(
+      list(
+        type = "line",
+        x0 = cutoff, x1 = cutoff, # Position of the vertical line
+        y0 = min(Y_bin), y1 = max(Y_bin*1.05), # Span vertically across the data
+        line = list(
+          color = "black",
+          dash = "dash", # Dashed line style
+          width = 0.8
+        )
+      )
+    )
+  )
+
+
 
 #############################################################
 ## Robust Nonparametric Local polynomial Methods
@@ -46,12 +98,12 @@ params <- tibble::tribble(
         "honest",      "MSE",                TRUE,    "poly_p_3",
         "honest",      "MSE",                TRUE,    "poly_p_4",
         
-        "honest",     "FLCI",                TRUE,    "poly_p_2",
-        "honest",     "FLCI",                TRUE,    "poly_p_3",
-        "honest",     "FLCI",                TRUE,    "poly_p_4",
+        #"honest",     "FLCI",                TRUE,    "poly_p_2",
+        #"honest",     "FLCI",                TRUE,    "poly_p_3",
+        #"honest",     "FLCI",                TRUE,    "poly_p_4",
       
            "rbc",      "MSE",               FALSE,            NA, 
-           "rbc",       "CE",               FALSE,            NA,
+         #  "rbc",       "CE",               FALSE,            NA,
   
   "conventional",      "MSE",               FALSE,            NA
 )
@@ -108,8 +160,8 @@ for (i in c(1:grid_length)){
 }
 
 
-#test <- rd_estimates %>%
-#  dplyr::mutate(
-#    calc = 2 * (1- pnorm(abs(tau_hat / tau_hat_se)))
-#    )
+test <- rd_estimates %>%
+  dplyr::mutate(
+    calc = 2 * (1- pnorm(abs(tau_hat / tau_hat_se)))
+    )
 

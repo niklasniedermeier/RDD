@@ -34,10 +34,22 @@ simulation_step <- function(
       m_hat <- as.numeric(sub("^M_([0-9]+(?:\\.[0-9]+)?)$", "\\1", mrot_method))
     }
     
-    if (mrot_method == "Kolesar_3"){
-      # s denotes the number of neighboors
+    if (mrot_method == "Kolesar_hb_20"){
+      # s denotes the number of neighbors
       # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
-      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 5)
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 20, estimate = "hb")
+    }
+    
+    if (mrot_method == "Kolesar_hb_30"){
+      # s denotes the number of neighbors
+      # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 30, estimate = "hb")
+    }
+    
+    if (mrot_method == "Kolesar_hb_40"){
+      # s denotes the number of neighbors
+      # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 40, estimate = "hb")
     }
     
     if (mrot_method == "poly_p_2"){
@@ -76,12 +88,8 @@ simulation_step <- function(
       m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 2, nknots = 3)
     }
     
-    if (mrot_method == "spline_p_3_k_2"){
-      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 2)
-    }
-    
-    if (mrot_method == "spline_p_3_k_3"){
-      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 3, nknots = 3)
+    if (mrot_method == "spline_p_2_k_4"){
+      m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 2, nknots = 4)
     }
     
     if (mrot_method == "locpoly"){
