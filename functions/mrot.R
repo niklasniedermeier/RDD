@@ -1,4 +1,14 @@
-mrot <- function(X, Y, method, c = 0, p = 3, nknots = 3, h = 0.1) {
+#' ROTs to estimate the Smoothness Bound. 
+#'
+#' @param X `numeric` Running variable vector
+#' @param Y `numeric` Outcome vector
+#' @param method `character` Method to estimate the second derivative: `"poly"`, `"poly_2_se"`, or `"spline"`
+#' @param c `numeric` Cutoff point, default is 0
+#' @param p `integer` Polynomial degree, default is 3
+#' @param nknots `integer` Number of knots for spline, default is 3
+#'
+#' @return `numeric` Maximum estimated second derivative for the selected method
+mrot <- function(X, Y, method, c = 0, p = 3, nknots = 3) {
   
   is_data_valid <- (!is.na(X)) & (!is.na(Y))
   
@@ -24,19 +34,10 @@ mrot <- function(X, Y, method, c = 0, p = 3, nknots = 3, h = 0.1) {
        f2_maxima[i] <- mrot_poly_2_se(X = df$X, Y = df$Y)
      }
      
-     if (method == "ss"){
-       f2_maxima[i] <- mrot_ss(X = df$X, Y = df$Y, nknots = nknots)
-     }
      
      if (method == "spline"){
        f2_maxima[i] <- mrot_spline(X = df$X, Y = df$Y, nknots = nknots, p = p)
      }
-    
-     if (method == "locpoly"){
-       
-       f2_maxima[i] <- mrot_locpoly(X = df$X, Y = df$Y, cutoff = c, h = h, p = p)
-     }
-     
   }
 
   
@@ -46,24 +47,19 @@ mrot <- function(X, Y, method, c = 0, p = 3, nknots = 3, h = 0.1) {
 }
 
 
+#' Polynomial ROT
+#'
+#' @param X `numeric` Running variable vector
+#' @param Y `numeric` Outcome vector
+#' @param p `numeric` Polynomial degree
+#'
+#' @return `numeric` Maximum estimated second derivative based on polynomial fit
 mrot_poly <- function(X, Y, p){
   
   if (p == 1){return(0)}
   
   model      <- lm(Y ~ poly(X, p, raw = TRUE))
   model_coef <- coef(model)
-  
-  #cut_border = 0.10
-  #if (all(X>=0)){
-  #  border_cond <- X <= quantile(X,cut_border)
-  #  X = X[border_cond ] 
-  #  Y = Y[border_cond ]
-  #  
-  #}else{
-  #  border_cond <- X >= quantile(X,1-cut_border)
-  #  X = X[border_cond ] 
-  #  Y = Y[border_cond ]
-  #}
   
   if (p == 2){
     f2_max <- abs(2 * model_coef[[3]])
@@ -96,6 +92,13 @@ mrot_poly <- function(X, Y, p){
   return(f2_max)
 }
 
+
+#' Polynomial ROT using q = 2 with "heuristic upperbound"
+#'
+#' @param X `numeric` Running variable vector
+#' @param Y `numeric` Outcome vector
+#'
+#' @return `numeric` Maximum estimated second derivative based on polynomial fit
 mrot_poly_2_se <- function(X, Y){
   
   model      <- lm(Y ~ poly(X, p = 2, raw = TRUE))
@@ -108,25 +111,18 @@ mrot_poly_2_se <- function(X, Y){
   delta_upper_ci <- leading_se * 1.96
   f2_max <- f2_max + delta_upper_ci
   
-  f2_max <- f2_max #* 1.8
-  
   return(f2_max)
 }
 
 
-mrot_ss <- function(X, Y, nknots, p = p){
-  model <- npreg::ss(
-    x = X , y = Y,
-    method = "BIC",
-    nknots = nknots
-  )
-  
-  f2_max <- npreg::predict.ss(model, X, deriv = 2)$y %>% abs() %>% max()
-  
-  return(f2_max)
-}
-
-
+#' Spline ROT 
+#'
+#' @param X `numeric` Running variable vector
+#' @param Y `numeric` Outcome vector
+#' @param nknots `integer` Number of knots. 
+#' @param p `integer` Polynomial degree. 
+#'
+#' @return `numeric` Maximum estimated second derivative based on spline fit
 mrot_spline <- function(X, Y, nknots, p){
   
   knot_seq  <- seq(from = min(X), to = max(X), len = nknots)
@@ -155,30 +151,34 @@ mrot_spline <- function(X, Y, nknots, p){
   
   Y_smooth_hat <- X_mat_smooth %*% beta_hat
   
-  
-  #cut_border = 1
-  #if (all(X_smooth>=0)){
-  #  border_cond <- X_smooth <= quantile(X_smooth,cut_border)
-  #  X_smooth = X_smooth[border_cond ] 
-  #  Y_smooth_hat = Y_smooth_hat[border_cond ]
-  #  
-  #}else{
-  #  border_cond <-  X_smooth >= quantile( X_smooth,1-cut_border)
-  #  X_smooth =  X_smooth[border_cond ] 
-  #  Y_smooth_hat = Y_smooth_hat[border_cond ]
-  #}
-  
   f2_max <- numerical_max_second_derivative(X = X_smooth, Y = Y_smooth_hat)
   
   return(f2_max)
 }
 
 
+#' Second Derivative of Polynomial
+#'
+#' Computes the absolute second derivative of a polynomial at a given point.
+#'
+#' @param x `numeric` Point at which to evaluate the second derivative
+#' @param coef `numeric` Vector of polynomial coefficients
+#' @param p `numeric` Polynomial degree
+#'
+#' @return `numeric` Absolute value of the second derivative at `x`
 f2_poly <- function(x, coef, p) {
   abs(sum(sapply(2:p, function(k) k * (k - 1) * coef[k + 1] * x^(k - 2))))
 }
 
 
+#' Numerical Maximum Second Derivative
+#'
+#' Estimates the maximum second derivative numerically using finite differences.
+#'
+#' @param X `numeric` Running variable vector
+#' @param Y `numeric` Outcome vector
+#'
+#' @return `numeric` Maximum absolute second derivative computed from the data
 numerical_max_second_derivative <- function(X,Y) {
   
   data <- data.frame(X = X, Y = Y)
@@ -193,13 +193,23 @@ numerical_max_second_derivative <- function(X,Y) {
 }
 
 
+#' Lower Bound ROT
+#'
+#' @param X `numeric` Running variable vector
+#' @param Y `numeric` Outcome vector
+#' @param cutoff `numeric` Cutoff
+#' @param alpha `numeric` Significance level
+#' @param s `integer` Number of neighbors 
+#' @param estimate `character` Either lower bound `lower` or half biased estimate `hb`
+#'
+#' @return `numeric` Maximum estimated second derivative based on spline fit
 mrot_lower_bound <- function(X, Y, cutoff, alpha, s, estimate){
   
   rd.honest.fit <- suppressMessages(RDHonest::RDHonest(
-    formula       = "Y ~ X", #outcome ~ running_variable 
+    formula       = "Y ~ X", 
     data          = data.frame(X = X, Y = Y), 
     cutoff        = cutoff,
-    sclass        = "H", # Hölder class
+    sclass        = "H", 
     kern          = "triangular",
     opt.criterion = "MSE",
     se.method     = "nn",
@@ -225,18 +235,3 @@ mrot_lower_bound <- function(X, Y, cutoff, alpha, s, estimate){
   return(m_hat)
 }
 
-
-mrot_locpoly <- function(X, Y, cutoff, p, h){
-  
-  r <- KernSmooth::locpoly(
-     X,Y,
-     drv = 2,
-     degree = p,
-     kernel = "triangular",
-     bandwidth = h
-   )
-  
-  f2_max <- abs(r$y[which.min(abs(r$x - cutoff))])
-  
-  return(f2_max)
-}

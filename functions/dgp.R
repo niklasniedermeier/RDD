@@ -1,3 +1,11 @@
+#' Simulate Data Generating Process (DGP)
+#'
+#' @param data_model `character` Model for DGP. Options are `design_1`,`design_2`,`design_3`,`design_4` and `design_5`.
+#' @param n `integer` Sample size
+#' @param M `numeric` True Smoothness Constant
+#' @param noise_method `character` Model for generating noise. Options are `homoscedastic`, `linear`, `quadratic`, `center` and `border`.
+#'
+#' @return `list` A list containing simulated data: `Y` (outcome), `X` (running variable), `tau` (treatment effect), `cutoff` (cutoff point), and `M` (smoothness parameter)
 dgp <- function(data_model, n, M, noise_method){
   
   X <- runif(n, -1, 1)
@@ -10,8 +18,6 @@ dgp <- function(data_model, n, M, noise_method){
   f <- get_f(X = X, M = M, data_model = data_model)
 
   Y <- f + noise + (X>=cutoff) * tau
-  
-  #Y <- f + noise + (X>=cutoff) * tau *(1 + X)^2
   
   data <- list(Y = Y, X = X, tau = tau, cutoff = cutoff, M = M)
   
@@ -36,7 +42,7 @@ get_noise <- function(X, noise_method){
   }
   
   if (noise_method == "center") {
-    0.05  + 0.8 * exp(-5 * X^2)
+    var <- 0.05  + 0.8 * exp(-5 * X^2)
   }
   
   if (noise_method == "border") {
@@ -198,36 +204,6 @@ show_dgp <- function(){
 }
 
 
-show_dgp_single_all_m <- function(design_num){
-  n <- 10000
-  X <- runif(n, -1, 1)
-  
-  X <- sort(X)
-  
-  f_design <- get(paste0("f_design_", design_num))
-  
-  data <- data.frame(
-    X = X,
-    M_4 = f_design(X, 4),
-    M_8 = f_design(X, 8)
-  )
-  
-  line = list(width = 1.5) 
-  
-  plotly::plot_ly(data, x = ~X) %>% 
-    add_trace(y = ~M_4, line = line, name = 'M: 4', type = 'scatter', mode = 'lines') %>% 
-    add_trace(y = ~M_8, line = line, name = 'M: 8', type = 'scatter', mode = 'lines') %>%
-    layout(
-      xaxis = list(
-        title = "x"
-      ), 
-      yaxis = list(
-        title = 'f(x)'
-      ), 
-      legend = list(x = 0.07, y = 1.035)
-    )
-}
-
 show_noise_var <- function(){
   n <- 10000
   X <- runif(n, -1, 1)
@@ -267,13 +243,3 @@ show_noise_var <- function(){
     ) %>%
     config(mathjax = "cdn")
 }
-
-show_noise_var()
-
-#show_dgp_single_all_m(1) 
-#show_dgp_single_all_m(2) 
-#show_dgp_single_all_m(3) 
-#show_dgp_single_all_m(4) 
-#show_dgp_single_all_m(5) 
-
-show_dgp()

@@ -1,3 +1,5 @@
+#' Simulation, which compares CI methods, when M needs to be estimated using
+#' ROT methods. 
 sim_inference_unknown_m_est <- function(){
   
   #-------------------         fix parameters          ---------------------------
@@ -19,9 +21,10 @@ sim_inference_unknown_m_est <- function(){
   )
   
   mrot_method <- c(
-    #Kolesar_hb_20",
-    #"Kolesar_hb_30",
-    #"Kolesar_hb_40",
+    "Kolesar_hb_15",
+    "Kolesar_hb_20",
+    "Kolesar_hb_25",
+    "Kolesar_hb_30",
     "spline_p_2_k_2",
     "spline_p_2_k_3",  
     "spline_p_2_k_4",
@@ -101,5 +104,3 @@ sim_inference_unknown_m_est <- function(){
   save_path <- file.path(getwd(),"data","simulation_results","sim_inference_unknown_m_est.rds")
   saveRDS(sim_inference_unknown_m_est, save_path)
 }
-#plot_compare_mrot_methods(results)
-

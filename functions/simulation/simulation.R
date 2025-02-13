@@ -1,3 +1,22 @@
+#' Run a Single Simulation Step for RDD
+#'
+#' Executes one step of an RDD simulation using specified data, estimation methods, and parameters.
+#'
+#' @param data_model `character` Data generating process model
+#' @param n `numeric` Sample size
+#' @param kernel `character` Kernel type for RDD estimation
+#' @param mrot_method `character` Method for estimating Hölder constant
+#' @param M `numeric` True Hölder constant
+#' @param noise_method `character` Method for generating noise
+#' @param ci_method `character` Confidence interval method
+#' @param bw_method `character` Bandwidth selection method
+#' @param bw_method_uniform `logical` Use uniform bandwidth
+#' @param se_method `character` Standard error estimation method
+#' @param se_method_J `integer` Nearest neighbors for SE estimation
+#' @param alpha `numeric` Significance level
+#'
+#' @return `list` Coverage estimates.
+#'
 simulation_step <- function(
   data_model,
   n,
@@ -30,26 +49,27 @@ simulation_step <- function(
       m_hat <- M
     }
     
+
     if (grepl("^M_[0-9]+(\\.[0-9]+)?$", mrot_method)) {
+      # Specify constant estimators. For example "M_4" results in the constant
+      # estimator m_hat = 4
       m_hat <- as.numeric(sub("^M_([0-9]+(?:\\.[0-9]+)?)$", "\\1", mrot_method))
     }
     
+    if (mrot_method == "Kolesar_hb_15"){
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha = alpha, s = 15, estimate = "hb")
+    }
+    
     if (mrot_method == "Kolesar_hb_20"){
-      # s denotes the number of neighbors
-      # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
-      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 20, estimate = "hb")
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha = alpha, s = 20, estimate = "hb")
+    }
+    
+    if (mrot_method == "Kolesar_hb_25"){
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha = alpha, s = 25, estimate = "hb")
     }
     
     if (mrot_method == "Kolesar_hb_30"){
-      # s denotes the number of neighbors
-      # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
-      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 30, estimate = "hb")
-    }
-    
-    if (mrot_method == "Kolesar_hb_40"){
-      # s denotes the number of neighbors
-      # s leads to I_n = n/s disjunct intervals with I_n/3 lower bound estimates
-      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha, s = 40, estimate = "hb")
+      m_hat <- mrot_lower_bound(X = X, Y = Y, cutoff = cutoff, alpha = alpha, s = 30, estimate = "hb")
     }
     
     if (mrot_method == "poly_p_2"){
@@ -90,11 +110,6 @@ simulation_step <- function(
     
     if (mrot_method == "spline_p_2_k_4"){
       m_hat <- mrot(X = X, Y = Y, method = "spline", c = cutoff, p = 2, nknots = 4)
-    }
-    
-    if (mrot_method == "locpoly"){
-      h_pilot <- get_h_pilot(X = X, Y = Y, c = cutoff, alpha = alpha)
-      m_hat <- mrot(X = X, Y = Y, method = "locpoly", c = cutoff, h = h_pilot, p = 2)
     }
     
   }else{
@@ -141,6 +156,27 @@ simulation_step <- function(
   return(coverage_estimates)
 }
 
+
+#' Run Multiple Simulations for RDD
+#'
+#' Runs `S` RDD simulations and aggregates results.
+#'
+#' @param S `numeric` Number of simulation steps
+#' @param data_model `character` Data generating process model
+#' @param n `numeric` Sample size
+#' @param mrot_method `character` Method for estimating Hölder constant
+#' @param M `numeric` True Hölder constant
+#' @param noise_method `character` Method for generating noise
+#' @param kernel `character` Kernel type for RDD estimation
+#' @param ci_method `character` Confidence interval method
+#' @param bw_method `character` Bandwidth selection method
+#' @param bw_method_uniform `logical` Use uniform bandwidth
+#' @param se_method `character` Standard error estimation method
+#' @param se_method_J `integer` Nearest neighbors for SE estimation
+#' @param alpha `numeric` Significance level
+#'
+#' @return `list` Aggregated simulation results.
+#'
 simulation <- function(
   S,
   data_model,
@@ -200,22 +236,4 @@ simulation <- function(
   
   return(params_and_estimates)
 }
-
-get_h_pilot <- function(X, Y, c, alpha){
-  rd.honest.fit <- suppressMessages(RDHonest::RDHonest(
-    formula       = "Y ~ X", #outcome ~ running_variable 
-    data          = data.frame(X = X, Y = Y), 
-    cutoff        = c,
-    sclass        = "H", # Hölder class
-    kern          = "triangular",
-    opt.criterion = "MSE",
-    se.method     = "nn",
-    alpha         = alpha
-  ))
-  
-  h <- rd.honest.fit$coefficients$bandwidth
-  return(h) 
-  
-}
-
 

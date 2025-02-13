@@ -1,3 +1,5 @@
+#' Simulation, which compares CI methods, when M needs to be estimated using
+#' ROT methods and the variance is heteroscedastic.
 sim_hetero_error_variance <- function(){
   
   #-------------------         fix parameters          ---------------------------
@@ -19,9 +21,9 @@ sim_hetero_error_variance <- function(){
   )
   
   
-  mrot_method <- c("true_m","spline_p_2_k_2","spline_p_3_k_4","spline_p_2_k_4")
-  M <- c(4)
-  se_method_J <- c(3,6,9)
+  mrot_method <- c("true_m","Imbens_scale_4","spline_p_2_k_4")
+  M <- c(8)
+  se_method_J <- c(3,6)
     
   noise_method <- c(
     "homoscedastic",
@@ -115,24 +117,3 @@ sim_hetero_error_variance <- function(){
   save_path <- file.path(getwd(),"data","simulation_results","sim_hetero_error_variance.rds")
   saveRDS(sim_hetero_error_variance, save_path)
 }  
-
-#coverage_prob_grid <- readRDS("conditional_var_results.rds")
-
-#summary <- coverage_prob_grid %>%
-#  group_by(ci_method, noise_method,mrot_method,se_method_J) %>%
-#  summarize(
-#    m_hat = paste0(min(round( m_hat,2))," - ", max(round(m_hat,2))),
-#    cp = paste0(min(round(coverage_prob*100)),"% - ", max(round(coverage_prob*100)),"%"),
-#    il = mean(interval_length)
-#  ) %>%
-#  ungroup() %>%
-#  group_by(noise_method, se_method_J) %>%
-#  mutate(
-#    div_helper = (ci_method == "honest" & mrot_method == "true_m") * il,
-#    div = max(div_helper),
-#    il = il / div
-#  ) %>%
-#  ungroup() %>%
-#  select(-c(div_helper,div)) %>%
-#  arrange(noise_method, se_method_J, il) %>% 
-#  filter(se_method_J == 3)

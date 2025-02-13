@@ -1,3 +1,4 @@
+#' Simulation, which compares CI methods, when M does not need to be estimated. 
 sim_inference_known_m <- function(){
 
   #-------------------         fix parameters          ---------------------------
@@ -112,8 +113,3 @@ sim_inference_known_m <- function(){
   save_path <- file.path(getwd(),"data","simulation_results","sim_inference_known_m.rds")
   saveRDS(sim_inference_known_m, save_path)
 }
-#plot_compare_h_methods(ci_methods)
-#plot_compare_ci_methods(ci_methods)
-
-  
-  

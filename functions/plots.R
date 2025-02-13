@@ -11,8 +11,8 @@ plot_compare_ci_methods <- function(grid){
     #bw_method == "MSE"
   #) 
   
-  line = list(width = 2) # Set line width here
-  marker = list(size = 4)
+  line = list(width = 1.5) # Set line width here
+  marker = list(size = 3)
 
   y_tickvals_bias <- seq(-0.05, 0.1, 0.05)
   y_range_bias    <-   c(-0.02, 0.12)
@@ -34,7 +34,7 @@ plot_compare_ci_methods <- function(grid){
   y_range_bw      <-   c(0.25, 0.7)
   y_title_bw      <- TeX("\\hat{h}")
   
-  x_title         <- TeX("\\text{DGP}")
+  x_title         <- "DGP"
   
   dotted_line <- list(
     list(
@@ -53,9 +53,9 @@ plot_compare_ci_methods <- function(grid){
   
   annotations = list( 
     list( 
-      x = 0.5,  
-      y = 1,  
-      text = TeX("\\text{M = 4}"),  
+      x = 0.45,  
+      y = 1.05,  
+      text = "M = 4",  
       xref = "paper",  
       yref = "paper",  
       xanchor = "center",  
@@ -63,9 +63,9 @@ plot_compare_ci_methods <- function(grid){
       showarrow = FALSE 
     ),  
     list( 
-      x = 0.5,  
+      x = 0.45,  
       y = 0.5,  
-      text = TeX("\\text{M = 8}"),  
+      text = "M = 8",  
       xref = "paper",  
       yref = "paper",  
       xanchor = "center",  
@@ -384,7 +384,8 @@ plot_compare_ci_methods <- function(grid){
                          #tracegroupgap = 1,
                          font = list(size = 10)
            ),
-           annotations = annotations
+           annotations = annotations,
+           margin = list(l = 60, r = 40, b = 60, t = 60) 
 
     ) %>%
     config(mathjax = "cdn")
@@ -412,13 +413,14 @@ plot_compare_h_methods <- function(grid){
   y_range_bw      <-   c(0.25, 0.7)
   y_title_bw      <- TeX("\\hat{h}")
   
-  x_title         <- TeX("\\text{DGP}")
+  x_title         <- "DGP"
   
+  height = 400
   annotations = list( 
     list( 
-      x = 0.25,  
-      y = 1,  
-      text = TeX("\\text{M = 4}"),  
+      x = 0.22,  
+      y = 1.1,  
+      text = "M = 4",  
       xref = "paper",  
       yref = "paper",  
       xanchor = "center",  
@@ -426,9 +428,9 @@ plot_compare_h_methods <- function(grid){
       showarrow = FALSE 
     ),  
     list( 
-      x = 0.75,  
-      y = 1,  
-      text = TeX("\\text{M = 8}"),  
+      x = 0.77,  
+      y = 1.1,  
+      text ="M = 8",  
       xref = "paper",  
       yref = "paper",  
       xanchor = "center",  
@@ -467,6 +469,7 @@ plot_compare_h_methods <- function(grid){
     showlegend = F
   ) %>% 
     layout(
+      height = height,  
       yaxis = list(
         title = y_title_bw,
         tickvals = y_tickvals_bw,
@@ -493,6 +496,7 @@ plot_compare_h_methods <- function(grid){
     showlegend = F
   ) %>% 
     layout(
+      height = height,  
       yaxis = list(
         title = y_title_bw,
         tickvals = y_tickvals_bw,
@@ -519,7 +523,8 @@ plot_compare_h_methods <- function(grid){
                          #tracegroupgap = 1,
                          font = list(size = 10)
            ),
-           annotations = annotations
+           annotations = annotations,
+           margin = list(l = 60, r = 40, b = 60, t = 60) 
            
     ) %>%
     config(mathjax = "cdn")
@@ -530,20 +535,23 @@ plot_compare_h_methods <- function(grid){
 
 
 ## MROT Plot
-plot_compare_mrot_methods <- function(grid){
-  mrot_analysis <- grid %>% 
+plot_compare_mrot_methods <- function(grid, M, title){
+  mrot_analysis <- grid  %>% 
+    dplyr::filter(
+      .data$M == .env$M
+    ) %>% 
     dplyr::mutate(
       data_model = gsub(".*_(\\d+)$", "\\1", data_model),
       mrot_extended = as.character(mrot_method) 
     ) %>% dplyr::arrange(
-      M, mrot_method
+      mrot_method
     )
   
   line = list(width = 2) # Set line width here
   marker = list(size = 4)
   
-  y_tickvals_bias <- seq(-5, 25, 5)
-  y_range_bias    <-   c(-5, 25)
+  y_tickvals_bias <- seq(-5, 35, 5)
+  y_range_bias    <-   c(-6, 35)
   y_title_bias    <- TeX("\\text{Bias}(\\hat{\\text{M}})")
   
   y_tickvals_sd   <- seq( 0, 15, 5)
@@ -555,10 +563,16 @@ plot_compare_mrot_methods <- function(grid){
   y_title_cp      <- TeX("\\text{CP}(\\hat{\\tau})")
   
   y_tickvals_il   <- seq(0.4, 1, 0.2)
-  y_range_il      <-   c(0.4, 1)
+  y_range_il      <-   c(0.4, 1.05)
   y_title_il      <- TeX("\\text{IL}(\\hat{\\tau})")
   
   x_title         <- TeX("\\text{DGP}")
+  
+  
+  if (any(grepl("^Kolesar",mrot_analysis$mrot_method))){
+    y_tickvals_sd   <- seq( 0, 40, 5)
+    y_range_sd      <-   c( 0, 40)
+  }
   
   dotted_line <- list(
     list(
@@ -577,19 +591,9 @@ plot_compare_mrot_methods <- function(grid){
   
   annotations = list( 
     list( 
-      x = 0.45,  
-      y = 1,  
-      text = TeX("\\text{M = 4}"),  
-      xref = "paper",  
-      yref = "paper",  
-      xanchor = "center",  
-      yanchor = "bottom",  
-      showarrow = FALSE 
-    ),  
-    list( 
-      x = 0.45,  
-      y = 0.5,  
-      text = TeX("\\text{M = 8}"),  
+      x = 0.5,  
+      y = 1.1,  
+      text = title,  
       xref = "paper",  
       yref = "paper",  
       xanchor = "center",  
@@ -597,7 +601,6 @@ plot_compare_mrot_methods <- function(grid){
       showarrow = FALSE 
     )
   )
-  
   unique_methods <- mrot_analysis %>% select(.data$mrot_extended) %>% pull() %>% unique()
 
   plotly_colors <- c(
@@ -616,13 +619,10 @@ plot_compare_mrot_methods <- function(grid){
   
   setNames(unique_methods, plotly_colors)
   
-  ######### M = 4
   # Bias
-  
-  mrot_analysis_4 <- mrot_analysis %>% dplyr::filter(M == 4)
-  
-  plot_bias_m_4 <- plotly::plot_ly(
-    mrot_analysis_4 ,
+
+  plot_bias <- plotly::plot_ly(
+    mrot_analysis ,
     x = ~data_model, 
     y = ~m_hat-M, 
     color = ~mrot_extended, 
@@ -637,7 +637,7 @@ plot_compare_mrot_methods <- function(grid){
       yaxis = list(
         title = y_title_bias,
         tickvals = y_tickvals_bias,
-        range   = y_range_bias 
+        range   = y_range_bias
       ),
       xaxis = list(
         title =  x_title 
@@ -647,8 +647,8 @@ plot_compare_mrot_methods <- function(grid){
   
   # SD
   
-  plot_sd_m_4 <- plotly::plot_ly(
-    mrot_analysis_4 ,
+  plot_sd <- plotly::plot_ly(
+    mrot_analysis ,
     x = ~data_model, 
     y = ~m_sd, 
     color = ~mrot_extended, 
@@ -673,8 +673,8 @@ plot_compare_mrot_methods <- function(grid){
     config(mathjax = "cdn")
   
   # CP 
-  plot_cp_m_4 <- plotly::plot_ly(
-    mrot_analysis_4 ,
+  plot_cp <- plotly::plot_ly(
+    mrot_analysis ,
     x = ~data_model, 
     y = ~coverage_prob, 
     color = ~mrot_extended, 
@@ -700,118 +700,8 @@ plot_compare_mrot_methods <- function(grid){
     config(mathjax = "cdn")
   
   # IL
-  plot_il_m_4 <- plotly::plot_ly(
-    mrot_analysis_4 ,
-    x = ~data_model, 
-    y = ~interval_length, 
-    color = ~mrot_extended, 
-    colors = plotly_colors,
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_il,
-        tickvals = y_tickvals_il,
-        range   = y_range_il  
-      ),
-      xaxis = list(
-        title =  x_title 
-      )
-    )%>%
-    config(mathjax = "cdn")
-  
-  ######### M = 8
-  # Bias
-  
-  mrot_analysis_8 <- mrot_analysis %>% dplyr::filter(M == 8)
-  
-  plot_bias_m_8 <- plotly::plot_ly(
-    mrot_analysis_8,
-    x = ~data_model, 
-    y = ~m_hat-M, 
-    color = ~mrot_extended, 
-    colors = plotly_colors,
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_bias,
-        tickvals = y_tickvals_bias,
-        range   = y_range_bias 
-      ),
-      xaxis = list(
-        title =  x_title 
-      )
-    )%>%
-    config(mathjax = "cdn")
-  
-  # SD
-  
-  plot_sd_m_8 <- plotly::plot_ly(
-    mrot_analysis_8,
-    x = ~data_model, 
-    y = ~m_sd, 
-    color = ~mrot_extended, 
-    colors = plotly_colors,
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_sd,
-        tickvals = y_tickvals_sd,
-        range   = y_range_sd 
-      ),
-      xaxis = list(
-        title =  x_title 
-      )
-    )%>%
-    config(mathjax = "cdn")
-  
-  
-  # CP 
-  plot_cp_m_8 <- plotly::plot_ly(
-    mrot_analysis_8,
-    x = ~data_model, 
-    y = ~coverage_prob, 
-    color = ~mrot_extended, 
-    colors = plotly_colors,
-    line = line,
-    marker = marker,
-    type = 'scatter'
-    , mode = 'lines+markers',
-    showlegend = F
-    
-  ) %>% 
-    layout(
-      yaxis = list(
-        title = y_title_cp,
-        tickvals = y_tickvals_cp,
-        range   = y_range_cp   
-      ),
-      xaxis = list(
-        title =  x_title 
-      ),
-      shapes = dotted_line
-    )%>%
-    config(mathjax = "cdn")
-  
-  # IL
-  plot_il_m_8 <- plotly::plot_ly(
-    mrot_analysis_8,
+  plot_il <- plotly::plot_ly(
+    mrot_analysis ,
     x = ~data_model, 
     y = ~interval_length, 
     color = ~mrot_extended, 
@@ -836,26 +726,24 @@ plot_compare_mrot_methods <- function(grid){
     config(mathjax = "cdn")
   
   plot <- subplot(
-    plot_bias_m_4,
-    plot_sd_m_4,
-    plot_cp_m_4,
-    plot_il_m_4,
-    plot_bias_m_8,
-    plot_sd_m_8,
-    plot_cp_m_8,
-    plot_il_m_8,
-    nrows = 2,
+    plot_bias,
+    plot_sd,
+    plot_cp,
+    plot_il,
+    nrows = 1,
     margin = 0.05,
     titleX = T,
     titleY = T,
     shareX = TRUE
   ) %>% 
-    layout(legend = list(x = 0,y = 1.2,
+    layout(
+      legend = list(x = 0,y = 1.2,
                          orientation = "h",
                          tracegroupgap = 1,
                          font = list(size = 10)
            ),
-           annotations = annotations
+      annotations = annotations,
+      margin = list(l = 60, r = 60, b = 60, t = 60) 
     ) %>%
     config(mathjax = "cdn")
   
@@ -863,9 +751,10 @@ plot_compare_mrot_methods <- function(grid){
 }
 
 
+
 plot_compare_mrot_methods_fix <- function(coverage_prob_grid){
   
-  y_tickvals_cp   <- seq(0, 1, 0.1)
+  y_tickvals_cp   <- c(seq(0, 1, 0.2),0.95)
   y_range_cp      <-   c(0, 1)
   y_title_cp      <- TeX("\\text{CP}(\\hat{\\tau})")
   
@@ -873,10 +762,18 @@ plot_compare_mrot_methods_fix <- function(coverage_prob_grid){
   y_range_il      <-   c(0, 1)
   y_title_il      <- TeX("\\text{IL}(\\hat{\\tau})")
   
+  y_tickvals_cv   <- seq(1.6, 2.4, 0.2)
+  y_range_cv      <-   c(1.6, 2.4)
+  y_title_cv      <- TeX("\\text{cv}(\\hat{t})")
+  
+  y_tickvals_h    <- seq(0.2, 0.6, 0.1)
+  y_range_h       <-   c(0.2, 0.6)
+  y_title_h       <- TeX("\\hat{h}")
+  
   line = list(width = 2.5) # Set line width here
   marker = list(size = 4.5)
   
-  height = 480
+  height = 500
   dotted_line <- list(
     list(
       type = "line",
@@ -901,7 +798,6 @@ plot_compare_mrot_methods_fix <- function(coverage_prob_grid){
   )
   
   data <- coverage_prob_grid %>% 
-    dplyr::filter(mrot_method != "M_0.5") %>% 
     dplyr::arrange(data_model) 
   
   x_title         <- TeX("\\hat{M}")
@@ -963,9 +859,60 @@ plot_compare_mrot_methods_fix <- function(coverage_prob_grid){
     ) %>%
     config(mathjax = "cdn")
   
+  cv <- plotly::plot_ly(
+    data,
+    x = ~m_hat, 
+    y = ~cv, 
+    color = ~data_model,
+    colors = plotly_colors,
+    type = 'scatter', 
+    mode = 'lines+markers',
+    showlegend = F,
+    line = line,
+    marker = marker
+  ) %>% 
+    layout(
+      height = height,  
+      yaxis = list(
+        title = y_title_cv,
+        tickvals = y_tickvals_cv,
+        range   = y_range_cv  
+      ),
+      xaxis = list(
+        title = x_title,
+        tickvals = x_tickvals,
+        range = x_range 
+      )
+    ) %>%
+    config(mathjax = "cdn")
   
+  h_hat <- plotly::plot_ly(
+    data ,
+    x = ~m_hat, 
+    y = ~h_hat, 
+    color = ~data_model,
+    colors = plotly_colors,
+    type = 'scatter', 
+    mode = 'lines+markers',
+    showlegend = F,
+    line = line,
+    marker = marker
+  ) %>% 
+    layout(
+      yaxis = list(
+        title = y_title_h,
+        tickvals = y_tickvals_h,
+        range   = y_range_h 
+      ),
+      xaxis = list(
+        title =  x_title 
+      )
+    )%>%
+    config(mathjax = "cdn")
   
   subplot(
+    #h_hat,
+    #cv,
     cp,
     il,
     nrows = 1,
@@ -977,9 +924,90 @@ plot_compare_mrot_methods_fix <- function(coverage_prob_grid){
       legend = list(x = 0.65,y = 0.4,
                     orientation = "v",
                     font = list(size = 12)
-      )
-      
+      ),
+      margin = list(l = 60, r = 40, b = 30, t = 50) 
     ) %>%
     config(mathjax = "cdn")
 }
+
+
+annotations <- list(
+  # Global Polynomial Point Estimation
+  list(
+    x = 0.85, y = 1.045, xref = "paper", yref = "paper",
+    text = "<span style='color:#1f77b4'>●</span> q=2",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.9, y = 1.045, xref = "paper", yref = "paper",
+    text = "<span style='color:#ff7f0e'>●</span> q=2",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.95, y = 1.045, xref = "paper", yref = "paper",
+    text = "<span style='color:#2ca02c'>●</span> q=3",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 1, y = 1.045, xref = "paper", yref = "paper",
+    text = "<span style='color:#d62728'>●</span> q=4",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  
+  # Scaled
+  list(
+    x = 0.85, y = 0.74, xref = "paper", yref = "paper",
+    text = "<span style='color:#1f77b4'>●</span> m=2",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.9, y = 0.74, xref = "paper", yref = "paper",
+    text = "<span style='color:#ff7f0e'>●</span> m=3",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.95, y = 0.74, xref = "paper", yref = "paper",
+    text = "<span style='color:#2ca02c'>●</span> m=4",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  
+  # Global Spline Regression
+  list(
+    x = 0.85, y = 0.48, xref = "paper", yref = "paper",
+    text = "<span style='color:#1f77b4'>●</span> k=2",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.9, y =  0.48, xref = "paper", yref = "paper",
+    text = "<span style='color:#ff7f0e'>●</span> k=3",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.95, y =  0.48, xref = "paper", yref = "paper",
+    text = "<span style='color:#2ca02c'>●</span> k=4",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  
+  # Half Bias Point Estimate 
+  list(
+    x = 0.85, y = 0.22, xref = "paper", yref = "paper",
+    text = "<span style='color:#1f77b4'>●</span> s=15",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.9, y =  0.22, xref = "paper", yref = "paper",
+    text = "<span style='color:#ff7f0e'>●</span> s=20",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 0.95, y =  0.22, xref = "paper", yref = "paper",
+    text = "<span style='color:#2ca02c'>●</span> s=25",
+    showarrow = FALSE, font = list(size = 10)
+  ),
+  list(
+    x = 1, y = 0.22, xref = "paper", yref = "paper",
+    text = "<span style='color:#d62728'>●</span> s=30",
+    showarrow = FALSE, font = list(size = 10)
+  )
+)
 

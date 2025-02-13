@@ -1,3 +1,20 @@
+#' Regression Discontinuity Design Estimation
+#'
+#' Estimates treatment effects in RDD using `RDHonest` or `rdrobust`.
+#'
+#' @param Y `numeric` Outcome vector
+#' @param X `numeric` Running variable vector
+#' @param cutoff `numeric` Cutoff point
+#' @param M `numeric` Hölder class constant
+#' @param kernel `character` Kernel type
+#' @param ci_method `character` CI method: `"honest"`, `"conventional"`, `"rbc"`
+#' @param bw_method `character` Bandwidth selection method
+#' @param bw_method_uniform `logical` Use uniform bandwidth
+#' @param se_method `character` SE estimation method
+#' @param se_method_J `integer` Nearest neighbors for SE
+#' @param alpha `numeric` Significance level
+#'
+#' @return A `data.frame` with estimatino results. 
 rd <- function(
   Y,
   X,

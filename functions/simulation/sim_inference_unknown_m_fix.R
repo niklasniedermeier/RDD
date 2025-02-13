@@ -1,3 +1,5 @@
+#' Simulation, which compares CI methods, when M is over- or underestimated using
+#' fixed estimators.
 sim_inference_unknown_m_fix <- function(){
   
   #-------------------         fix parameters          ---------------------------
