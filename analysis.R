@@ -11,7 +11,7 @@ source(file.path(getwd(), "functions","rd.R"))
 source(file.path(getwd(), "functions","plots.R"))
 
 #-------------------------------------------------------------------------------
-#               Run ans save Monte-Carlo-Simulation results
+#               Run and save Monte-Carlo-Simulation results
 #-------------------------------------------------------------------------------
 
 # set seed for reproducibility
@@ -24,7 +24,7 @@ source(file.path(getwd(), "functions","plots.R"))
 #sim_hetero_error_variance()
 
 #-------------------------------------------------------------------------------
-#                 Chapter 5.1: Inference for with known M
+#                 Chapter 5.1: Inference with known M
 #-------------------------------------------------------------------------------
 
 figure_1 <- show_dgp()
@@ -46,7 +46,7 @@ table_5 <- sim_inference_known_m %>% arrange(M,data_model,bw_method_uniform, ci_
   select(M, data_model, bw_method_uniform, ci_method, bw_method, Bias, SE, h, CP, IL) 
 
 #-------------------------------------------------------------------------------
-#                 # Chapter 5.2: Inference for with unknown M
+#                 # Chapter 5.2: Inference with unknown M
 #-------------------------------------------------------------------------------
 
 path <- file.path(getwd(),"data","simulation_results","sim_inference_unknown_m_fix.rds")
